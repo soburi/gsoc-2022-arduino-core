@@ -192,7 +192,7 @@ String & String::copy(const char *cstr, unsigned int length)
 		return *this;
 	}
 	len = length;
-	strcpy(buffer, cstr);
+	memcpy(buffer, cstr, length);
 	return *this;
 }
 
@@ -212,7 +212,7 @@ void String::move(String &rhs)
 {
 	if (buffer) {
 		if (rhs && capacity >= rhs.len) {
-			strcpy(buffer, rhs.buffer);
+			memcpy(buffer, rhs.buffer, rhs.len);
 			len = rhs.len;
 			rhs.len = 0;
 			return;
@@ -284,7 +284,7 @@ unsigned char String::concat(const char *cstr, unsigned int length)
 	if (!cstr) return 0;
 	if (length == 0) return 1;
 	if (!reserve(newlen)) return 0;
-	strcpy(buffer + len, cstr);
+	memcpy(buffer + len, cstr, length);
 	len = newlen;
 	return 1;
 }
