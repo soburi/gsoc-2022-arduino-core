@@ -109,6 +109,7 @@ public:
 	// concatenation is considered unsucessful.
 	unsigned char concat(const String &str);
 	unsigned char concat(const char *cstr);
+	unsigned char concat(const char *cstr, unsigned int length);
 	unsigned char concat(char c);
 	unsigned char concat(unsigned char num);
 	unsigned char concat(int num);
@@ -225,7 +226,6 @@ protected:
 	void init(void);
 	void invalidate(void);
 	unsigned char changeBuffer(unsigned int maxStrLen);
-	unsigned char concat(const char *cstr, unsigned int length);
 
 	// copy and move
 	String & copy(const char *cstr, unsigned int length);
