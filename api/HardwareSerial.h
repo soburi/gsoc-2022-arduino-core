@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include "Stream.h"
 
+namespace arduino {
+
 // XXX: Those constants should be defined as const int / enums?
 // XXX: shall we use namespaces too?
 #define SERIAL_PARITY_EVEN   (0x1ul)
@@ -100,3 +102,4 @@ class HardwareSerial : public Stream
 // XXX: Are we keeping the serialEvent API?
 extern void serialEventRun(void) __attribute__((weak));
 
+}

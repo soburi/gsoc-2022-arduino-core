@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include "Stream.h"
 
+namespace arduino {
+
 class HardwareI2C : public Stream
 {
   public:
@@ -40,4 +42,6 @@ class HardwareI2C : public Stream
     virtual void onReceive(void(*)(int)) = 0;
     virtual void onRequest(void(*)(void)) = 0;
 };
+
+}
 

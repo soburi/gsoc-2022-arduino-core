@@ -23,6 +23,8 @@
 #include "Printable.h"
 #include "String.h"
 
+namespace arduino {
+
 // A class to make it easier to handle and pass around IP addresses
 
 class IPAddress : public Printable {
@@ -74,4 +76,4 @@ public:
 };
 
 extern const IPAddress INADDR_NONE;
-
+}

@@ -23,6 +23,8 @@
 
 #include <stdint.h>
 
+namespace arduino {
+
 // Define constants and variables for buffering incoming serial data.  We're
 // using a ring buffer (I think), in which head is the index of the location
 // to which to write the next incoming character and tail is the index of the
@@ -137,6 +139,7 @@ bool RingBufferN<N>::isFull()
   return (nextIndex(_iHead) == _iTail);
 }
 
-#endif /* _RING_BUFFER_ */
+}
 
+#endif /* _RING_BUFFER_ */
 #endif /* __cplusplus */

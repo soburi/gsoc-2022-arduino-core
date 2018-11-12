@@ -34,6 +34,8 @@
 readBytesBetween( pre_string, terminator, buffer, length)
 */
 
+namespace arduino {
+
 // This enumeration provides the lookahead options for parseInt(), parseFloat()
 // The rules set out here are used until either the first valid character is found
 // or a time out occurs due to lack of input.
@@ -125,3 +127,5 @@ class Stream : public Print
 };
 
 #undef NO_IGNORE_CHAR
+
+}

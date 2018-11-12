@@ -19,9 +19,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#pragma once
-
 #ifdef __cplusplus
+
+#ifndef __ARDUINO_STRINGS__
+#define __ARDUINO_STRINGS__
 
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,7 @@
 #include "deprecated-avr-comp/avr/pgmspace.h"
 #endif
 
+namespace arduino {
 // When compiling programs with this class, the following gcc parameters
 // dramatically increase performance and memory (RAM) efficiency, typically
 // with little or no increase in code size.
@@ -48,6 +50,7 @@ class StringSumHelper;
 // The string class
 class String
 {
+	friend class StringSumHelper;
 	// use a function pointer to allow for "if (s)" without the
 	// complications of an operator bool(). for more information, see:
 	// http://www.artima.com/cppsource/safebool.html
@@ -231,16 +234,18 @@ protected:
 class StringSumHelper : public String
 {
 public:
-	StringSumHelper(const String &s) : String(s) {}
-	StringSumHelper(const char *p) : String(p) {}
-	StringSumHelper(char c) : String(c) {}
-	StringSumHelper(unsigned char num) : String(num) {}
-	StringSumHelper(int num) : String(num) {}
-	StringSumHelper(unsigned int num) : String(num) {}
-	StringSumHelper(long num) : String(num) {}
-	StringSumHelper(unsigned long num) : String(num) {}
-	StringSumHelper(float num) : String(num) {}
-	StringSumHelper(double num) : String(num) {}
+    StringSumHelper(const String &s) : String(s) {}
+    StringSumHelper(const char *p) : String(p) {}
+    StringSumHelper(char c) : String(c) {}
+    StringSumHelper(unsigned char num) : String(num) {}
+    StringSumHelper(int num) : String(num) {}
+    StringSumHelper(unsigned int num) : String(num) {}
+    StringSumHelper(long num) : String(num) {}
+    StringSumHelper(unsigned long num) : String(num) {}
+    StringSumHelper(float num) : String(num) {}
+    StringSumHelper(double num) : String(num) {}
 };
 
+}
 #endif  // __cplusplus
+#endif  // __ARDUINO_STRINGS__

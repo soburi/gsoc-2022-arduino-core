@@ -20,6 +20,8 @@
 
 #include <stdlib.h>
 
+namespace arduino {
+
 class Print;
 
 /** The Printable class provides a way for new classes to allow themselves to be printed.
@@ -34,3 +36,4 @@ class Printable
     virtual size_t printTo(Print& p) const = 0;
 };
 
+}

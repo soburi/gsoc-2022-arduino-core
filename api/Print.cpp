@@ -23,6 +23,8 @@
 
 #include "Print.h"
 
+using namespace arduino;
+
 // Public Methods //////////////////////////////////////////////////////////////
 
 /* default implementation: may be overridden */

@@ -22,6 +22,8 @@
 
 #include <ctype.h>
 
+namespace arduino {
+
 // WCharacter.h prototypes
 inline bool isAlphaNumeric(int c) __attribute__((always_inline));
 inline bool isAlpha(int c) __attribute__((always_inline));
@@ -165,4 +167,5 @@ inline int toUpperCase(int c)
   return toupper (c);
 }
 
+}
 #endif

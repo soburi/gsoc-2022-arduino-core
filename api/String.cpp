@@ -27,6 +27,8 @@
 /*  Constructors                             */
 /*********************************************/
 
+using namespace arduino;
+
 String::String(const char *cstr)
 {
 	init();
@@ -352,77 +354,77 @@ unsigned char String::concat(const __FlashStringHelper * str)
 /*  Concatenate                              */
 /*********************************************/
 
-StringSumHelper & operator + (const StringSumHelper &lhs, const String &rhs)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, const String &rhs)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(rhs.buffer, rhs.len)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, const char *cstr)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, const char *cstr)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!cstr || !a.concat(cstr, strlen(cstr))) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, char c)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, char c)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(c)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, unsigned char num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, unsigned char num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, int num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, int num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, unsigned int num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, unsigned int num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, long num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, long num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, unsigned long num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, unsigned long num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, float num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, float num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, double num)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, double num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
 	return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, const __FlashStringHelper *rhs)
+StringSumHelper & arduino::operator + (const StringSumHelper &lhs, const __FlashStringHelper *rhs)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(rhs))	a.invalidate();

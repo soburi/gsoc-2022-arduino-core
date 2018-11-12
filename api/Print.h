@@ -29,6 +29,8 @@
 #define OCT 8
 #define BIN 2
 
+namespace arduino {
+
 class Print
 {
   private:
@@ -90,3 +92,4 @@ class Print
     virtual void flush() { /* Empty implementation for backward compatibility */ }
 };
 
+}

@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+namespace arduino {
+
 // core need to define
 void* epBuffer(unsigned int n); // -> returns a poointer to the Nth element of the EP buffer structure
 
@@ -71,5 +73,7 @@ private:
 // This function prevents static-initialization-order-fiasco
 // https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
 PluggableUSB_& PluggableUSB();
+
+}
 
 #endif

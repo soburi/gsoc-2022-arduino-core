@@ -20,6 +20,8 @@
 #include "USBAPI.h"
 #include "PluggableUSB.h"
 
+using namespace arduino;
+
 int PluggableUSB_::getInterface(uint8_t* interfaceCount)
 {
 	int sent = 0;

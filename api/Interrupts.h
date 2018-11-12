@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include "Common.h"
 
+namespace arduino {
+
 template <typename T>
 using voidTemplateFuncPtrParam =  void (*)(T param);
 
@@ -37,5 +39,6 @@ template<typename T> void attachInterrupt(pin_size_t interruptNum, voidTemplateF
   attachInterruptParam(interruptNum, (voidFuncPtrParam)userFunc, mode, (void*)param);
 }
 
+}
 #endif
 #endif

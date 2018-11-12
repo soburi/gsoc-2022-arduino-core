@@ -20,6 +20,8 @@
 #include "IPAddress.h"
 #include "Print.h"
 
+using namespace arduino;
+
 IPAddress::IPAddress()
 {
     _address.dword = 0;
