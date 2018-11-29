@@ -28,6 +28,7 @@
 #ifdef __cplusplus
 #include "Client.h"
 #include "HardwareI2C.h"
+#include "HardwareSPI.h"
 #include "HardwareSerial.h"
 #include "Interrupts.h"
 #include "IPAddress.h"
@@ -51,5 +52,8 @@
 
 // Misc Arduino core functions
 #include "Common.h"
+
+// Compatibility layer for older code
+#include "Compat.h"
 
 #endif
