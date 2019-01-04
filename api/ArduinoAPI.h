@@ -21,7 +21,7 @@
 #define ARDUINO_API_H
 
 // version 1.0.0
-#define ARDUINO_API_VERSION 10000
+#define ARDUINO_API_VERSION 10001
 
 #include "Binary.h"
 
