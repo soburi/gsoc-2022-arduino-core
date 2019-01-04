@@ -26,9 +26,6 @@
 
 namespace arduino {
 
-// core need to define
-void* epBuffer(unsigned int n); // -> returns a poointer to the Nth element of the EP buffer structure
-
 class PluggableUSBModule {
 public:
   PluggableUSBModule(uint8_t numEps, uint8_t numIfs, unsigned int *epType) :
@@ -68,12 +65,14 @@ private:
   PluggableUSBModule* rootNode;
   uint8_t totalEP;
 };
+}
+
+// core need to define
+void* epBuffer(unsigned int n); // -> returns a pointer to the Nth element of the EP buffer structure
 
 // Replacement for global singleton.
 // This function prevents static-initialization-order-fiasco
 // https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
-PluggableUSB_& PluggableUSB();
-
-}
+arduino::PluggableUSB_& PluggableUSB();
 
 #endif

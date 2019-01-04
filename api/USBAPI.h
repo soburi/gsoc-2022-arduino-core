@@ -44,7 +44,10 @@ typedef struct __attribute__((packed))
 	uint16_t 	wLength;
 } USBSetup;
 
+}
+
 //================================================================================
+// USB APIs (C scope)
 //================================================================================
 
 int USB_SendControl(uint8_t flags, const void* d, int len);
@@ -58,5 +61,4 @@ int USB_Recv(uint8_t ep, void* data, int len);		// non-blocking
 int USB_Recv(uint8_t ep);							// non-blocking
 void USB_Flush(uint8_t ep);
 
-}
 #endif
