@@ -37,20 +37,6 @@ typedef enum {
 #define SERIAL      0x0
 #define DISPLAY     0x1
 
-#ifndef min
-#define min(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a < _b ? _a : _b; })
-#endif
-
-#ifndef max
-#define max(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
-#endif
-
 #ifndef constrain
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #endif
@@ -128,6 +114,33 @@ void loop(void);
 
 #ifdef __cplusplus
 } // extern "C"
+#endif
+
+#ifdef __cplusplus
+  template<class T, class L> 
+  auto min(const T& a, const L& b) -> decltype((b < a) ? b : a)
+  {
+    return (b < a) ? b : a;
+  }
+
+  template<class T, class L> 
+  auto max(const T& a, const L& b) -> decltype((b < a) ? b : a)
+  {
+    return (a < b) ? b : a;
+  }
+#else
+#ifndef min
+#define min(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
+#endif
+#ifndef max
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+#endif
 #endif
 
 #ifdef __cplusplus
