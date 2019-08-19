@@ -9,6 +9,7 @@ For backwards compatibility, every revision of this repo will increase `ARDUINO_
 
 Some cores have been ported to the new structure, for example:
 * megaAVR (https://github.com/arduino/ArduinoCore-megaAVR) 
+* nRF52-mbedos (https://github.com/arduino/ArduinoCore-nRF528x-mbedos)
 * classic AVR (https://github.com/arduino/ArduinoCore-avr/tree/api) 
 * SAMD (https://github.com/arduino/ArduinoCore-samd/tree/api)
 
