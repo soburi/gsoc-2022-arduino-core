@@ -22,6 +22,8 @@
 #include <inttypes.h>
 #include "Stream.h"
 
+#define SPI_HAS_TRANSACTION
+
 namespace arduino {
 
 typedef enum {
