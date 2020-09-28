@@ -26,7 +26,6 @@
 #include "Binary.h"
 
 #ifdef __cplusplus
-#include "Client.h"
 #include "Interrupts.h"
 #include "IPAddress.h"
 #include "Print.h"
