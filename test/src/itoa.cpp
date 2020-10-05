@@ -8,36 +8,43 @@
 
 #include <itoa.h>
 
-#include <stdlib.h>
+#include <string>
+#include <stdexcept>
+
+#include <stdio.h>
 
 /**************************************************************************************
  * FUNCTION IMPLEMENTATION
  **************************************************************************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-char * itoa(int value, char *string, int radix)
+std::string radixToFmtString(int const radix)
 {
-  return itoa(value, string, radix);
+  if      (radix == 8)  return std::string("%o");
+  else if (radix == 10) return std::string("%d");
+  else if (radix == 16) return std::string("%X");
+  else throw std::runtime_error("Invalid radix.");
 }
 
-char * ltoa(long value, char *string, int radix)
+char * itoa(int value, char * str, int radix)
 {
-  return ltoa(value, string, radix);
+  sprintf(str, radixToFmtString(radix).c_str(), value);
+  return str;
 }
 
-char * utoa(unsigned value, char *string, int radix)
+char * ltoa(long value, char * str, int radix)
 {
-  return utoa(value, string, radix);
+  sprintf(str, radixToFmtString(radix).c_str(), value);
+  return str;
 }
 
-char * ultoa(unsigned long value, char *string, int radix)
+char * utoa(unsigned value, char *str, int radix)
 {
-  return ultoa(value, string, radix);
+  sprintf(str, radixToFmtString(radix).c_str(), value);
+  return str;
 }
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
+char * ultoa(unsigned long value, char * str, int radix)
+{
+  sprintf(str, radixToFmtString(radix).c_str(), value);
+  return str;
+}
