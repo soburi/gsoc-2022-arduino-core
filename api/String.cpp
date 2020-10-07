@@ -656,7 +656,8 @@ void String::replace(const String& find, const String& replace)
 			readFrom = foundAt + find.len;
 			len += diff;
 		}
-		strcpy(writeTo, readFrom);
+		if (writeTo != readFrom)
+			strcpy(writeTo, readFrom);
 	} else {
 		unsigned int size = len; // compute size needed for result
 		while ((foundAt = strstr(readFrom, find.buffer)) != NULL) {
