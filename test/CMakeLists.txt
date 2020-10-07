@@ -42,6 +42,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_peek.cpp
   src/Ringbuffer/test_read_char.cpp
   src/Ringbuffer/test_store_char.cpp
+  src/String/test_length.cpp
   src/String/test_String.cpp
   src/WCharacter/test_isControl.cpp
   src/WCharacter/test_isDigit.cpp
