@@ -45,6 +45,8 @@ set(TEST_SRCS
   src/String/test_concat.cpp
   src/String/test_length.cpp
   src/String/test_String.cpp
+  src/String/test_toLowerCase.cpp
+  src/String/test_toUpperCase.cpp
   src/WCharacter/test_isControl.cpp
   src/WCharacter/test_isDigit.cpp
   src/WCharacter/test_isHexadecimalDigit.cpp
