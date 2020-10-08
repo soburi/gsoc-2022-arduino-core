@@ -46,6 +46,7 @@ set(TEST_SRCS
   src/String/test_length.cpp
   src/String/test_replace.cpp
   src/String/test_String.cpp
+  src/String/test_toFloat.cpp
   src/String/test_toInt.cpp
   src/String/test_toLowerCase.cpp
   src/String/test_toUpperCase.cpp
