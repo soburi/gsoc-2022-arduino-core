@@ -43,6 +43,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_read_char.cpp
   src/Ringbuffer/test_store_char.cpp
   src/String/test_concat.cpp
+  src/String/test_indexOf.cpp
   src/String/test_length.cpp
   src/String/test_remove.cpp
   src/String/test_replace.cpp
