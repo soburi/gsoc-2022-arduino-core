@@ -44,6 +44,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_store_char.cpp
   src/String/test_concat.cpp
   src/String/test_compareTo.cpp
+  src/String/test_comparisonFunc.cpp
   src/String/test_indexOf.cpp
   src/String/test_lastIndexOf.cpp
   src/String/test_length.cpp
