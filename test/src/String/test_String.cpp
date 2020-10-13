@@ -35,42 +35,49 @@ TEST_CASE ("Testing String(char) constructor()", "[String-Ctor-03]")
   REQUIRE(strcmp(str.c_str(), "A") == 0);
 }
 
-TEST_CASE ("Testing String(int, unsigned char base = 10) constructor()", "[String-Ctor-04]")
+TEST_CASE ("Testing String(unsigned char, unsigned char base = 10) constructor()", "[String-Ctor-04]")
+{
+  unsigned char const val = 1;
+  arduino::String str(val);
+  REQUIRE(strcmp(str.c_str(), "1") == 0);
+}
+
+TEST_CASE ("Testing String(int, unsigned char base = 10) constructor()", "[String-Ctor-05]")
 {
   int const val = -1;
   arduino::String str(val);
   REQUIRE(strcmp(str.c_str(), "-1") == 0);
 }
 
-TEST_CASE ("Testing String(unsigned int, unsigned char base = 10) constructor()", "[String-Ctor-05]")
+TEST_CASE ("Testing String(unsigned int, unsigned char base = 10) constructor()", "[String-Ctor-06]")
 {
   unsigned int const val = 1;
   arduino::String str(val);
   REQUIRE(strcmp(str.c_str(), "1") == 0);
 }
 
-TEST_CASE ("Testing String(long, unsigned char base = 10) constructor()", "[String-Ctor-06]")
+TEST_CASE ("Testing String(long, unsigned char base = 10) constructor()", "[String-Ctor-07]")
 {
   long const val = -1;
   arduino::String str(val);
   REQUIRE(strcmp(str.c_str(), "-1") == 0);
 }
 
-TEST_CASE ("Testing String(unsigned long, unsigned char base = 10) constructor()", "[String-Ctor-06]")
+TEST_CASE ("Testing String(unsigned long, unsigned char base = 10) constructor()", "[String-Ctor-08]")
 {
   unsigned long const val = 1;
   arduino::String str(val);
   REQUIRE(strcmp(str.c_str(), "1") == 0);
 }
 
-TEST_CASE ("Testing String(float, unsigned char decimalPlaces = 2) constructor()", "[String-Ctor-07]")
+TEST_CASE ("Testing String(float, unsigned char decimalPlaces = 2) constructor()", "[String-Ctor-09]")
 {
   float const val = 1.234f;
   arduino::String str(val);
   REQUIRE(strcmp(str.c_str(), "1.23") == 0);
 }
 
-TEST_CASE ("Testing String(double, unsigned char decimalPlaces = 2) constructor()", "[String-Ctor-08]")
+TEST_CASE ("Testing String(double, unsigned char decimalPlaces = 2) constructor()", "[String-Ctor-10]")
 {
   double const val = 5.678;
   arduino::String str(val);
