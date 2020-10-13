@@ -46,6 +46,7 @@ set(TEST_SRCS
   src/String/test_compareTo.cpp
   src/String/test_comparisonFunc.cpp
   src/String/test_characterAccessFunc.cpp
+  src/String/test_substring.cpp
   src/String/test_indexOf.cpp
   src/String/test_lastIndexOf.cpp
   src/String/test_length.cpp
