@@ -91,3 +91,11 @@ TEST_CASE ("Testing String::concat(double)", "[String-concat-10]")
   REQUIRE(str.concat(num) == 1);
   REQUIRE(strcmp(str.c_str(), "Hello 5.68") == 0);
 }
+
+TEST_CASE ("Testing String::concat(const __FlashStringHelper *)", "[String-concat-11]")
+{
+#undef F
+#define F(string_literal) (reinterpret_cast<const arduino::__FlashStringHelper *>(PSTR(string_literal)))
+  arduino::String str1("Hello");
+  REQUIRE(str1.concat(F(" Arduino")) == 1);
+}
