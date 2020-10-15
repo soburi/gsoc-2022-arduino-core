@@ -646,18 +646,22 @@ void String::replace(const String& find, const String& replace)
 			readFrom = foundAt + replace.len;
 		}
 	} else if (diff < 0) {
-		char *writeTo = buffer;
+		unsigned int size = len; // compute size needed for result
 		while ((foundAt = strstr(readFrom, find.buffer)) != NULL) {
-			unsigned int n = foundAt - readFrom;
-			memcpy(writeTo, readFrom, n);
-			writeTo += n;
-			memcpy(writeTo, replace.buffer, replace.len);
-			writeTo += replace.len;
 			readFrom = foundAt + find.len;
-			len += diff;
+			diff = 0 - diff;
+			size -= diff;
 		}
-		if (writeTo != readFrom)
-			strcpy(writeTo, readFrom);
+		if (size == len) return;
+		int index = len - 1;
+		while (index >= 0 && (index = lastIndexOf(find, index)) >= 0) {
+			readFrom = buffer + index + find.len;
+			memmove(readFrom - diff, readFrom, len - (readFrom - buffer));
+			len -= diff;
+			buffer[len] = 0;
+			memcpy(buffer + index, replace.buffer, replace.len);
+			index--;
+		}
 	} else {
 		unsigned int size = len; // compute size needed for result
 		while ((foundAt = strstr(readFrom, find.buffer)) != NULL) {
