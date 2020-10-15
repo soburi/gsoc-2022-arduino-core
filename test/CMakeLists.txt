@@ -43,6 +43,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_read_char.cpp
   src/Ringbuffer/test_store_char.cpp
   src/String/test_concat.cpp
+  src/String/test_operators.cpp
   src/String/test_compareTo.cpp
   src/String/test_comparisonFunc.cpp
   src/String/test_characterAccessFunc.cpp
