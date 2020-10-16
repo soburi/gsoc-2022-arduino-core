@@ -51,7 +51,14 @@ TEST_CASE ("Testing String::replace(String, String) when string constains subtr 
   REQUIRE(strcmp(str.c_str(), "He11o Arduino!") == 0);
 }
 
-TEST_CASE ("Testing String::replace(String, String) substr 'find' smaller than 'replace'", "[String-replace-06]")
+TEST_CASE ("Testing String::replace(String, String) substr 'find' larger than 'replace'", "[String-replace-06]")
+{
+  arduino::String str("Hello Arduino!");
+  str.replace(arduino::String("llo"), arduino::String("11"));
+  REQUIRE(strcmp(str.c_str(), "He11 Arduino!") == 0);
+}
+
+TEST_CASE ("Testing String::replace(String, String) substr 'find' smaller than 'replace'", "[String-replace-07]")
 {
   arduino::String str("Hello Arduino!");
   str.replace(arduino::String("ll"), arduino::String("111"));
