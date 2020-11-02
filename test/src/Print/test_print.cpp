@@ -111,6 +111,12 @@ TEST_CASE ("Print::print(double, int = 2)", "[Print-print-07]")
     WHEN("digits = 5")           { mock.print(val, 5); REQUIRE(mock._str  == "3.14590"); }
   }
 
+  WHEN ("digits are negative")
+  {
+    double const val = 3.1459;
+    WHEN("digits = -1") { mock.print(val, -1); REQUIRE(mock._str  == "3.15"); }
+  }
+
   WHEN ("val is a negative floating point value")
   {
     double const val = -3.1459;

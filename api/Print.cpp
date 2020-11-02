@@ -332,8 +332,11 @@ size_t Print::printULLNumber(unsigned long long n64, uint8_t base)
   return bytes;
 }
 
-size_t Print::printFloat(double number, uint8_t digits)
+size_t Print::printFloat(double number, int digits)
 {
+  if (digits < 0)
+    digits = 2;
+
   size_t n = 0;
 
   if (isnan(number)) return print("nan");
