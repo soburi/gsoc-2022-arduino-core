@@ -11,6 +11,7 @@
 #include <Print.h>
 
 #include <PrintMock.h>
+#include <PrintableMock.h>
 
 /**************************************************************************************
  * TEST CODE
@@ -125,4 +126,16 @@ TEST_CASE ("Print::print(double, int = 2)", "[Print-print-07]")
 
   WHEN ("val is NAN")      { mock.print(NAN);      REQUIRE(mock._str  == "nan"); }
   WHEN ("val is INFINITY") { mock.print(INFINITY); REQUIRE(mock._str  == "inf"); }
+}
+
+TEST_CASE ("Print::print(Printable)", "[Print-print-08]")
+{
+  PrintMock mock;
+
+  PrintableMock printable;
+  printable._i = 1;
+
+  mock.print(printable);
+
+  REQUIRE(mock._str  == "PrintableMock i = 1");
 }
