@@ -95,3 +95,28 @@ TEST_CASE ("Print::print(unsigned long long, int = DEC|HEX|OCT|BIN)", "[Print-pr
   WHEN("OCT") { mock.print(val, OCT); REQUIRE(mock._str  == "21"); }
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "10001"); }
 }
+
+TEST_CASE ("Print::print(double, int = 2)", "[Print-print-07]")
+{
+  PrintMock mock;
+
+  WHEN ("val is a positive floating point value")
+  {
+    double const val = 3.1459;
+    WHEN("digits = 0")           { mock.print(val, 0); REQUIRE(mock._str  == "3"); }
+    WHEN("digits = 1")           { mock.print(val, 1); REQUIRE(mock._str  == "3.1"); }
+    WHEN("digits = 2 (default)") { mock.print(val);    REQUIRE(mock._str  == "3.15"); }
+    WHEN("digits = 3")           { mock.print(val, 3); REQUIRE(mock._str  == "3.146"); }
+    WHEN("digits = 4")           { mock.print(val, 4); REQUIRE(mock._str  == "3.1459"); }
+    WHEN("digits = 5")           { mock.print(val, 5); REQUIRE(mock._str  == "3.14590"); }
+  }
+
+  WHEN ("val is a negative floating point value")
+  {
+    double const val = -3.1459;
+    WHEN("digits = 2 (default)") { mock.print(val); REQUIRE(mock._str  == "-3.15"); }
+  }
+
+  WHEN ("val is NAN")      { mock.print(NAN);      REQUIRE(mock._str  == "nan"); }
+  WHEN ("val is INFINITY") { mock.print(INFINITY); REQUIRE(mock._str  == "inf"); }
+}
