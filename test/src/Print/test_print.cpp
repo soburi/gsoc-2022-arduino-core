@@ -170,3 +170,14 @@ TEST_CASE ("Print::print(unsigned char, int)", "[Print-print-12]")
   WHEN("OCT") { mock.print('A', OCT); REQUIRE(mock._str  == "101"); }
   WHEN("BIN") { mock.print('A', BIN); REQUIRE(mock._str  == "1000001"); }
 }
+
+TEST_CASE ("Testing Print::print(const __FlashStringHelper *)", "[Print-print-13]")
+{
+#undef F
+#define F(string_literal) (reinterpret_cast<const arduino::__FlashStringHelper *>(PSTR(string_literal)))
+  PrintMock mock;
+
+  mock.print(F("Hello flash string"));
+
+  REQUIRE(mock._str  == "Hello flash string");
+}

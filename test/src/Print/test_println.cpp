@@ -135,3 +135,14 @@ TEST_CASE ("Print::println(unsigned char, int base = DEC (default))", "[Print-pr
 
   REQUIRE(mock._str == "65\r\n");
 }
+
+TEST_CASE ("Testing Print::println(const __FlashStringHelper *)", "[Print-println-13]")
+{
+#undef F
+#define F(string_literal) (reinterpret_cast<const arduino::__FlashStringHelper *>(PSTR(string_literal)))
+  PrintMock mock;
+
+  mock.println(F("Hello flash string"));
+
+  REQUIRE(mock._str  == "Hello flash string\r\n");
+}
