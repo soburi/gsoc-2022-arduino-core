@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2020 Arduino.  All rights reserved.
+ */
+
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
+#include <catch.hpp>
+
+#include <Print.h>
+
+#include <PrintMock.h>
+#include <PrintableMock.h>
+
+/**************************************************************************************
+ * TEST CODE
+ **************************************************************************************/
+
+TEST_CASE ("Print::println(char)", "[Print-println-01]")
+{
+  PrintMock mock;
+
+  mock.println('A');
+
+  REQUIRE(mock._str == "A\r\n");
+}
+
+TEST_CASE ("Print::println(int, int = DEC (default))", "[Print-println-02]")
+{
+  PrintMock mock;
+  int const val = -1;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "-1\r\n");
+}
+
+TEST_CASE ("Print::println(unsigned int, int = DEC (default))", "[Print-println-03]")
+{
+  PrintMock mock;
+  unsigned int const val = 17;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "17\r\n");
+}
+
+TEST_CASE ("Print::println(long, int = DEC (default))", "[Print-println-04]")
+{
+  PrintMock mock;
+  long const val = -1;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "-1\r\n");
+}
+
+TEST_CASE ("Print::println(unsigned long, int = DEC (default))", "[Print-println-04]")
+{
+  PrintMock mock;
+  unsigned long const val = 17;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "17\r\n");
+}
+
+TEST_CASE ("Print::println(long long, int = DEC (default))", "[Print-println-05]")
+{
+  PrintMock mock;
+  long long const val = -1;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "-1\r\n");
+}
+
+TEST_CASE ("Print::println(unsigned long long, int = DEC|HEX|OCT|BIN)", "[Print-println-06]")
+{
+  PrintMock mock;
+  unsigned long long const val = 17;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "17\r\n");
+}
+
+TEST_CASE ("Print::println(double, int = 2)", "[Print-println-07]")
+{
+  PrintMock mock;
+  double const val = 3.1459;
+
+  mock.println(val);
+
+  REQUIRE(mock._str == "3.15\r\n");
+}
+
+TEST_CASE ("Print::println(Printable)", "[Print-println-08]")
+{
+  PrintMock mock;
+  PrintableMock printable;
+  printable._i = 1;
+
+  mock.println(printable);
+
+  REQUIRE(mock._str  == "PrintableMock i = 1\r\n");
+}
