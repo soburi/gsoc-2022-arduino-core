@@ -39,6 +39,7 @@ set(TEST_SRCS
   src/Print/test_getWriteError.cpp
   src/Print/test_print.cpp
   src/Print/test_println.cpp
+  src/Print/test_availableForWrite.cpp
   src/Ringbuffer/test_available.cpp
   src/Ringbuffer/test_availableForStore.cpp
   src/Ringbuffer/test_clear.cpp
