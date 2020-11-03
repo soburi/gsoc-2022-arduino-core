@@ -36,7 +36,17 @@ TEST_CASE ("Print::print(const String &)", "[Print-print-02]")
   REQUIRE(mock._str == "Test String");
 }
 
-TEST_CASE ("Print::print(int, int = DEC|HEX|OCT|BIN)", "[Print-print-03]")
+TEST_CASE ("Print::print(const char str[])", "[Print-print-03]")
+{
+  PrintMock mock;
+  const char str[] = "Test String";
+
+  mock.print(str);
+
+  REQUIRE(mock._str == "Test String");
+}
+
+TEST_CASE ("Print::print(int, int = DEC|HEX|OCT|BIN)", "[Print-print-04]")
 {
   PrintMock mock;
 
@@ -48,7 +58,7 @@ TEST_CASE ("Print::print(int, int = DEC|HEX|OCT|BIN)", "[Print-print-03]")
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "1111111111111111111111111111111111111111111111111111111111111111"); }
 }
 
-TEST_CASE ("Print::print(unsigned int, int = DEC|HEX|OCT|BIN)", "[Print-print-04]")
+TEST_CASE ("Print::print(unsigned int, int = DEC|HEX|OCT|BIN)", "[Print-print-05]")
 {
   PrintMock mock;
 
@@ -60,7 +70,7 @@ TEST_CASE ("Print::print(unsigned int, int = DEC|HEX|OCT|BIN)", "[Print-print-04
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "10001"); }
 }
 
-TEST_CASE ("Print::print(long, int = DEC|HEX|OCT|BIN)", "[Print-print-05]")
+TEST_CASE ("Print::print(long, int = DEC|HEX|OCT|BIN)", "[Print-print-06]")
 {
   PrintMock mock;
 
@@ -72,7 +82,7 @@ TEST_CASE ("Print::print(long, int = DEC|HEX|OCT|BIN)", "[Print-print-05]")
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "1111111111111111111111111111111111111111111111111111111111111111"); }
 }
 
-TEST_CASE ("Print::print(unsigned long, int = DEC|HEX|OCT|BIN)", "[Print-print-06]")
+TEST_CASE ("Print::print(unsigned long, int = DEC|HEX|OCT|BIN)", "[Print-print-07]")
 {
   PrintMock mock;
 
@@ -84,7 +94,7 @@ TEST_CASE ("Print::print(unsigned long, int = DEC|HEX|OCT|BIN)", "[Print-print-0
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "10001"); }
 }
 
-TEST_CASE ("Print::print(long long, int = DEC|HEX|OCT|BIN)", "[Print-print-07]")
+TEST_CASE ("Print::print(long long, int = DEC|HEX|OCT|BIN)", "[Print-print-08]")
 {
   PrintMock mock;
 
@@ -96,7 +106,7 @@ TEST_CASE ("Print::print(long long, int = DEC|HEX|OCT|BIN)", "[Print-print-07]")
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "1111111111111111111111111111111111111111111111111111111111111111"); }
 }
 
-TEST_CASE ("Print::print(unsigned long long, int = DEC|HEX|OCT|BIN)", "[Print-print-08]")
+TEST_CASE ("Print::print(unsigned long long, int = DEC|HEX|OCT|BIN)", "[Print-print-09]")
 {
   PrintMock mock;
 
@@ -108,7 +118,7 @@ TEST_CASE ("Print::print(unsigned long long, int = DEC|HEX|OCT|BIN)", "[Print-pr
   WHEN("BIN") { mock.print(val, BIN); REQUIRE(mock._str  == "10001"); }
 }
 
-TEST_CASE ("Print::print(double, int = 2)", "[Print-print-09]")
+TEST_CASE ("Print::print(double, int = 2)", "[Print-print-10]")
 {
   PrintMock mock;
 
@@ -139,7 +149,7 @@ TEST_CASE ("Print::print(double, int = 2)", "[Print-print-09]")
   WHEN ("val is INFINITY") { mock.print(INFINITY); REQUIRE(mock._str  == "inf"); }
 }
 
-TEST_CASE ("Print::print(Printable)", "[Print-print-10]")
+TEST_CASE ("Print::print(Printable)", "[Print-print-11]")
 {
   PrintMock mock;
 
