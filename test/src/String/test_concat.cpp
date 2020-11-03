@@ -98,4 +98,5 @@ TEST_CASE ("Testing String::concat(const __FlashStringHelper *)", "[String-conca
 #define F(string_literal) (reinterpret_cast<const arduino::__FlashStringHelper *>(PSTR(string_literal)))
   arduino::String str1("Hello");
   REQUIRE(str1.concat(F(" Arduino")) == 1);
+  REQUIRE(strcmp(str1.c_str(), "Hello Arduino") == 0);
 }
