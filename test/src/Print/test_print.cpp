@@ -160,3 +160,13 @@ TEST_CASE ("Print::print(Printable)", "[Print-print-11]")
 
   REQUIRE(mock._str  == "PrintableMock i = 1");
 }
+
+TEST_CASE ("Print::print(unsigned char, int)", "[Print-print-12]")
+{
+  PrintMock mock;
+
+  WHEN("DEC") { mock.print('A', DEC); REQUIRE(mock._str  == "65"); }
+  WHEN("HEX") { mock.print('A', HEX); REQUIRE(mock._str  == "41"); }
+  WHEN("OCT") { mock.print('A', OCT); REQUIRE(mock._str  == "101"); }
+  WHEN("BIN") { mock.print('A', BIN); REQUIRE(mock._str  == "1000001"); }
+}

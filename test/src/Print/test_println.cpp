@@ -126,3 +126,12 @@ TEST_CASE ("Print::println(Printable)", "[Print-println-11]")
 
   REQUIRE(mock._str  == "PrintableMock i = 1\r\n");
 }
+
+TEST_CASE ("Print::println(unsigned char, int base = DEC (default))", "[Print-println-12]")
+{
+  PrintMock mock;
+
+  mock.println('A', DEC);
+
+  REQUIRE(mock._str == "65\r\n");
+}
