@@ -34,3 +34,10 @@ TEST_CASE ("Testing String::toInt when string contains a number", "[String-toInt
   int const val = str.toInt();
   REQUIRE(val == -1);
 }
+
+TEST_CASE ("Testing String::toInt when string does not have a buffer", "[String-toInt-04]")
+{
+  char *buffer = NULL;
+  arduino::String str(buffer);
+  REQUIRE(str.toInt() == 0);
+}

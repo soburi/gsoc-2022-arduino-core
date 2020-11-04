@@ -34,3 +34,10 @@ TEST_CASE ("Testing String::toDouble when string contains a number", "[String-to
   double const val = str.toDouble();
   REQUIRE(val == -1.2345);
 }
+
+TEST_CASE ("Testing String::toDouble when string does not have a buffer", "[String-toDouble-04]")
+{
+  char *buffer = NULL;
+  arduino::String str(buffer);
+  REQUIRE(str.toDouble() == 0);
+}
