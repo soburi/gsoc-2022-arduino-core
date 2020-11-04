@@ -92,7 +92,7 @@ set(TEST_TARGET_SRCS
   src/dtostrf.cpp
   src/itoa.cpp
   src/PrintMock.cpp
-  src/millis.cpp
+  src/MillisFake.cpp
   ${TEST_SRCS}
   ${TEST_DUT_SRCS}
 )

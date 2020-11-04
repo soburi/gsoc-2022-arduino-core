@@ -2,27 +2,28 @@
  * Copyright (c) 2020 Arduino.  All rights reserved.
  */
 
-#ifndef MILLIS_H_
-#define MILLIS_H_
-
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <Common.h>
+#include <MillisFake.h>
 
 /**************************************************************************************
- * FUNCTION DECLARATION
+ * GLOBAL VARIABLES
  **************************************************************************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+static unsigned long millis_val = 0;
 
-void set_millis(unsigned long const val);
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
 
-#ifdef __cplusplus
+void set_millis(unsigned long const val)
+{
+  millis_val = val;
 }
-#endif
 
-#endif /* MILLIS_H_ */
+unsigned long millis()
+{
+  return millis_val;
+}
