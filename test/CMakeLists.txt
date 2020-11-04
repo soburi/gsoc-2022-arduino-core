@@ -48,6 +48,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_read_char.cpp
   src/Ringbuffer/test_store_char.cpp
   src/Stream/test_getTimeout.cpp
+  src/Stream/test_readString.cpp
   src/Stream/test_setTimeout.cpp
   src/String/test_concat.cpp
   src/String/test_operators.cpp
@@ -91,8 +92,9 @@ set(TEST_TARGET_SRCS
   src/main.cpp
   src/dtostrf.cpp
   src/itoa.cpp
-  src/PrintMock.cpp
   src/MillisFake.cpp
+  src/PrintMock.cpp
+  src/StreamMock.cpp
   ${TEST_SRCS}
   ${TEST_DUT_SRCS}
 )

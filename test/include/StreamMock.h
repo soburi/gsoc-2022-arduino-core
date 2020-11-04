@@ -9,7 +9,7 @@
  * INCLUDE
  **************************************************************************************/
 
-#include <sstream>
+#include <deque>
 
 #include <Stream.h>
 
@@ -20,21 +20,17 @@
 class StreamMock : public arduino::Stream
 {
 public:
-  std::stringstream _ss;
 
-  virtual size_t write(uint8_t ch) override { _ss << static_cast<char>(ch); return 1; }
-  virtual int available() override { return _ss.gcount(); }
-  virtual int read() override
-  {
-    char ch;
-    _ss >> ch;
-    return ch;
-  }
-  virtual int peek() override
-  {
-    char ch = _ss.peek();
-    return ch;
-  }
+  void operator << (char const * str);
+
+  virtual size_t write(uint8_t ch) override;
+  virtual int available() override;
+  virtual int read() override;
+  virtual int peek() override;
+
+private:
+  std::deque<char> _stream;
+
 };
 
 #endif /* STREAM_MOCK_H_ */
