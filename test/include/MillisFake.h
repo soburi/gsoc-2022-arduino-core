@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+void millis_autoOn();
+void millis_autoOff();
 void set_millis(unsigned long const val);
 
 #ifdef __cplusplus
