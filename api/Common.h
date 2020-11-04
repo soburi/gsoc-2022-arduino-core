@@ -79,7 +79,9 @@ typedef uint16_t  word;
 void init(void);
 void initVariant(void);
 
+#ifndef HOST
 int atexit(void (*func)()) __attribute__((weak));
+#endif
 int main() __attribute__((weak));
 
 #ifdef EXTENDED_PIN_MODE
