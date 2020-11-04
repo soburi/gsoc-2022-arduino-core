@@ -91,3 +91,13 @@ TEST_CASE ("Testing String(double, unsigned char decimalPlaces = 2) constructor(
   arduino::String str(val);
   REQUIRE(strcmp(str.c_str(), "5.68") == 0);
 }
+
+TEST_CASE ("Testing String(const __FlashStringHelper) constructor() with invalid buffer", "[String-Ctor-12]")
+{
+#undef F
+#define F(string_literal) (reinterpret_cast<const arduino::__FlashStringHelper *>(PSTR(string_literal)))
+  char *buffer = NULL;
+
+  arduino::String str1(F(buffer));
+  REQUIRE(str1.compareTo("Hello") == 0);
+}
