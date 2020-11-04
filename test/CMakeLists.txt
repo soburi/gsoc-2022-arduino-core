@@ -48,6 +48,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_read_char.cpp
   src/Ringbuffer/test_store_char.cpp
   src/Stream/test_getTimeout.cpp
+  src/Stream/test_setTimeout.cpp
   src/String/test_concat.cpp
   src/String/test_operators.cpp
   src/String/test_compareTo.cpp
@@ -80,6 +81,7 @@ set(TEST_DUT_SRCS
   ../api/Common.cpp
   ../api/IPAddress.cpp
   ../api/String.cpp
+  ../api/Stream.cpp
   ../api/Print.cpp
 )
 
@@ -90,6 +92,7 @@ set(TEST_TARGET_SRCS
   src/dtostrf.cpp
   src/itoa.cpp
   src/PrintMock.cpp
+  src/millis.cpp
   ${TEST_SRCS}
   ${TEST_DUT_SRCS}
 )
