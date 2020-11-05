@@ -47,6 +47,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_peek.cpp
   src/Ringbuffer/test_read_char.cpp
   src/Ringbuffer/test_store_char.cpp
+  src/Stream/test_find.cpp
   src/Stream/test_getTimeout.cpp
   src/Stream/test_readString.cpp
   src/Stream/test_readStringUntil.cpp
