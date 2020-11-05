@@ -117,10 +117,18 @@ TEST_CASE ("Testing String(String &&) constructor()", "[String-Ctor-14]")
   REQUIRE(str1.compareTo("Hello") == 0);
 }
 
-TEST_CASE ("Testing String(String &&) with move(String &rhs) to a valid buffer", "[String-Ctor-15]")
+TEST_CASE ("Testing String(String &&) with move(String &rhs) from smaller to larger buffer", "[String-Ctor-15]")
 {
   arduino::String str("Hello");
   arduino::String str1("Arduino");
   str1 = static_cast<arduino::String&&>(str);
   REQUIRE(str1.compareTo("Hello") == 0);
+}
+
+TEST_CASE ("Testing String(String &&) with move(String &rhs) from larger to smaller buffer", "[String-Ctor-16]")
+{
+  arduino::String str("Hello");
+  arduino::String str1("Arduino");
+  str = static_cast<arduino::String&&>(str1);
+  REQUIRE(str1.compareTo("Arduino") == 0);
 }
