@@ -49,6 +49,7 @@ set(TEST_SRCS
   src/Ringbuffer/test_store_char.cpp
   src/Stream/test_getTimeout.cpp
   src/Stream/test_readString.cpp
+  src/Stream/test_readStringUntil.cpp
   src/Stream/test_setTimeout.cpp
   src/String/test_concat.cpp
   src/String/test_operators.cpp
