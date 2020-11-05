@@ -100,3 +100,57 @@ TEST_CASE ("Testing String::operator + (const __FlashStringHelper *)", "[String-
   arduino::String str("Hello Arduino");
   REQUIRE(str.compareTo(str1+F("Arduino")) == 0);
 }
+
+TEST_CASE ("Testing & String::operator = (StringSumHelper &&rval)", "[String-operator+-12]")
+{
+  arduino::String str1("Hello ");
+  arduino::String str = (str1+"Arduino");
+  REQUIRE(str.compareTo("Hello Arduino") == 0);
+}
+
+TEST_CASE ("Testing & String::operator = (const String &) with invalid buffer of second string", "[String-operator+-13]")
+{
+  arduino::String str1("Hello");
+
+  char *buffer2 = NULL;
+  arduino::String str2(buffer2);
+
+  str1 = str2;
+  REQUIRE(str1.compareTo(str2) == 0);
+}
+
+TEST_CASE ("Testing & String::operator = (const char *)", "[String-operator+-14]")
+{
+  char *buffer = NULL;
+  arduino::String str("Hello");
+  str = buffer;
+  REQUIRE(str.compareTo("Hello") == 0);
+}
+
+TEST_CASE ("Testing & String::operator = (const String &) with invalid buffer of first string", "[String-operator+-15]")
+{
+  char *buffer1 = NULL;
+  arduino::String str1(buffer1);
+
+  arduino::String str2("Hello");
+
+  str1 = str2;
+  REQUIRE(str1.compareTo(str2) == 0);
+}
+
+TEST_CASE ("Testing & String::operator = (String &&)", "[String-operator+-16]")
+{
+  arduino::String str("Hello");
+  arduino::String str1("Arduino");
+  str1 = static_cast<arduino::String&&>(str);
+  REQUIRE(str1.compareTo("Hello") == 0);
+}
+
+TEST_CASE ("Testing & String::operator = (StringSumHelper &&)", "[String-operator+-17]")
+{
+  arduino::String str("Hello");
+  char const ch = '!';
+  arduino::String str1("Arduino");
+  str1 = static_cast<arduino::StringSumHelper&&>(str+ch);
+  REQUIRE(str1.compareTo("Hello!") == 0);
+}
