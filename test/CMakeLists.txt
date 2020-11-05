@@ -50,6 +50,7 @@ set(TEST_SRCS
   src/Stream/test_find.cpp
   src/Stream/test_findUntil.cpp
   src/Stream/test_getTimeout.cpp
+  src/Stream/test_parseFloat.cpp
   src/Stream/test_parseInt.cpp
   src/Stream/test_readString.cpp
   src/Stream/test_readStringUntil.cpp
