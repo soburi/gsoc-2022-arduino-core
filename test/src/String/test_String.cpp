@@ -101,3 +101,26 @@ TEST_CASE ("Testing String(const __FlashStringHelper) constructor() with invalid
   arduino::String str1(F(buffer));
   REQUIRE(str1.compareTo("Hello") == 0);
 }
+
+TEST_CASE ("Testing String(StringSumHelper &&) constructor()", "[String-Ctor-13]")
+{
+  arduino::String str("Hello");
+  char const ch = '!';
+  arduino::String str1(static_cast<arduino::StringSumHelper&&>(str+ch));
+  REQUIRE(str1.compareTo("Hello!") == 0);
+}
+
+TEST_CASE ("Testing String(String &&) constructor()", "[String-Ctor-14]")
+{
+  arduino::String str("Hello");
+  arduino::String str1(static_cast<arduino::String&&>(str));
+  REQUIRE(str1.compareTo("Hello") == 0);
+}
+
+TEST_CASE ("Testing String(String &&) with move(String &rhs) to a valid buffer", "[String-Ctor-15]")
+{
+  arduino::String str("Hello");
+  arduino::String str1("Arduino");
+  str1 = static_cast<arduino::String&&>(str);
+  REQUIRE(str1.compareTo("Hello") == 0);
+}
