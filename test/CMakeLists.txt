@@ -53,6 +53,7 @@ set(TEST_SRCS
   src/Stream/test_parseFloat.cpp
   src/Stream/test_parseInt.cpp
   src/Stream/test_readBytes.cpp
+  src/Stream/test_readBytesUntil.cpp
   src/Stream/test_readString.cpp
   src/Stream/test_readStringUntil.cpp
   src/Stream/test_setTimeout.cpp
