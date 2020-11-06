@@ -1,5 +1,8 @@
 # ArduinoCore-API
 
+[![Unit Tests](https://github.com/arduino/ArduinoCore-API/workflows/Unit%20Tests/badge.svg)](https://github.com/arduino/ArduinoCore-API/actions?workflow=Unit+Tests)
+[![codecov](https://codecov.io/gh/arduino/ArduinoCore-API/branch/master/graph/badge.svg)](https://codecov.io/gh/arduino/ArduinoCore-API)
+
 This repository hosts the hardware independent layer of Arduino core.
 
 All Arduino official cores are being ported to the new structure so they take advantage of this single repo.
