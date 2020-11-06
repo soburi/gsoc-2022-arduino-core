@@ -37,7 +37,7 @@ class Print
     int write_error;
     size_t printNumber(unsigned long, uint8_t);
     size_t printULLNumber(unsigned long long, uint8_t);
-    size_t printFloat(double, uint8_t);
+    size_t printFloat(double, int);
   protected:
     void setWriteError(int err = 1) { write_error = err; }
   public:

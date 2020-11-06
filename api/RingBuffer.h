@@ -22,6 +22,7 @@
 #define _RING_BUFFER_
 
 #include <stdint.h>
+#include <string.h>
 
 namespace arduino {
 
@@ -38,6 +39,7 @@ class RingBufferN
     uint8_t _aucBuffer[N] ;
     volatile int _iHead ;
     volatile int _iTail ;
+    volatile int _numElems;
 
   public:
     RingBufferN( void ) ;
@@ -51,6 +53,7 @@ class RingBufferN
 
   private:
     int nextIndex(int index);
+    inline bool isEmpty() const { return (_numElems == 0); }
 };
 
 typedef RingBufferN<SERIAL_BUFFER_SIZE> RingBuffer;
@@ -66,16 +69,15 @@ RingBufferN<N>::RingBufferN( void )
 template <int N>
 void RingBufferN<N>::store_char( uint8_t c )
 {
-  int i = nextIndex(_iHead);
-
   // if we should be storing the received character into the location
   // just before the tail (meaning that the head would advance to the
   // current location of the tail), we're about to overflow the buffer
   // and so we don't write the character or advance the head.
-  if ( i != _iTail )
+  if (!isFull())
   {
     _aucBuffer[_iHead] = c ;
-    _iHead = i ;
+    _iHead = nextIndex(_iHead);
+    _numElems++;
   }
 }
 
@@ -84,16 +86,18 @@ void RingBufferN<N>::clear()
 {
   _iHead = 0;
   _iTail = 0;
+  _numElems = 0;
 }
 
 template <int N>
 int RingBufferN<N>::read_char()
 {
-  if(_iTail == _iHead)
+  if (isEmpty())
     return -1;
 
   uint8_t value = _aucBuffer[_iTail];
   _iTail = nextIndex(_iTail);
+  _numElems--;
 
   return value;
 }
@@ -101,27 +105,19 @@ int RingBufferN<N>::read_char()
 template <int N>
 int RingBufferN<N>::available()
 {
-  int delta = _iHead - _iTail;
-
-  if(delta < 0)
-    return N + delta;
-  else
-    return delta;
+  return _numElems;
 }
 
 template <int N>
 int RingBufferN<N>::availableForStore()
 {
-  if (_iHead >= _iTail)
-    return N - 1 - _iHead + _iTail;
-  else
-    return _iTail - _iHead - 1;
+  return (N - _numElems);
 }
 
 template <int N>
 int RingBufferN<N>::peek()
 {
-  if(_iTail == _iHead)
+  if (isEmpty())
     return -1;
 
   return _aucBuffer[_iTail];
@@ -136,7 +132,7 @@ int RingBufferN<N>::nextIndex(int index)
 template <int N>
 bool RingBufferN<N>::isFull()
 {
-  return (nextIndex(_iHead) == _iTail);
+  return (_numElems == N);
 }
 
 }

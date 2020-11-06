@@ -107,7 +107,7 @@ public:
 	unsigned char concat(const String &str);
 	unsigned char concat(const char *cstr);
 	unsigned char concat(char c);
-	unsigned char concat(unsigned char c);
+	unsigned char concat(unsigned char num);
 	unsigned char concat(int num);
 	unsigned char concat(unsigned int num);
 	unsigned char concat(long num);
