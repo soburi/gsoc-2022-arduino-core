@@ -26,10 +26,6 @@
 #include "Binary.h"
 
 #ifdef __cplusplus
-#include "Client.h"
-#include "HardwareI2C.h"
-#include "HardwareSPI.h"
-#include "HardwareSerial.h"
 #include "Interrupts.h"
 #include "IPAddress.h"
 #include "Print.h"
