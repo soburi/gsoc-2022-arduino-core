@@ -20,8 +20,8 @@
 #ifndef ARDUINO_API_H
 #define ARDUINO_API_H
 
-// version 1.0.0
-#define ARDUINO_API_VERSION 10001
+// version 1.1.0
+#define ARDUINO_API_VERSION 10100
 
 #include "Binary.h"
 
