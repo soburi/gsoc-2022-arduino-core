@@ -104,22 +104,24 @@ const SPISettings DEFAULT_SPI_SETTINGS = SPISettings();
 class HardwareSPI
 {
   public:
-    virtual uint8_t transfer(uint8_t data);
-    virtual uint16_t transfer16(uint16_t data);
-    virtual void transfer(void *buf, size_t count);
+    virtual ~HardwareSPI() { }
+
+    virtual uint8_t transfer(uint8_t data) = 0;
+    virtual uint16_t transfer16(uint16_t data) = 0;
+    virtual void transfer(void *buf, size_t count) = 0;
 
     // Transaction Functions
-    virtual void usingInterrupt(int interruptNumber);
-    virtual void notUsingInterrupt(int interruptNumber);
-    virtual void beginTransaction(SPISettings settings);
-    virtual void endTransaction(void);
+    virtual void usingInterrupt(int interruptNumber) = 0;
+    virtual void notUsingInterrupt(int interruptNumber) = 0;
+    virtual void beginTransaction(SPISettings settings) = 0;
+    virtual void endTransaction(void) = 0;
 
     // SPI Configuration methods
-    virtual void attachInterrupt();
-    virtual void detachInterrupt();
+    virtual void attachInterrupt() = 0;
+    virtual void detachInterrupt() = 0;
 
-    virtual void begin();
-    virtual void end();
+    virtual void begin() = 0;
+    virtual void end() = 0;
 };
 
 // Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI classe name
