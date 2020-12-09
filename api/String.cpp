@@ -20,6 +20,7 @@
 */
 
 #include "String.h"
+#include "Common.h"
 #include "itoa.h"
 #include "deprecated-avr-comp/avr/dtostrf.h"
 
@@ -123,6 +124,7 @@ String::String(float value, unsigned char decimalPlaces)
 	static size_t const FLOAT_BUF_SIZE = FLT_MAX_10_EXP + FLT_MAX_DECIMAL_PLACES + 1 /* '-' */ + 1 /* '.' */ + 1 /* '\0' */;
 	init();
 	char buf[FLOAT_BUF_SIZE];
+	decimalPlaces = min(decimalPlaces, FLT_MAX_DECIMAL_PLACES);
 	*this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
 }
 
@@ -131,6 +133,7 @@ String::String(double value, unsigned char decimalPlaces)
 	static size_t const DOUBLE_BUF_SIZE = DBL_MAX_10_EXP + DBL_MAX_DECIMAL_PLACES + 1 /* '-' */ + 1 /* '.' */ + 1 /* '\0' */;
 	init();
 	char buf[DOUBLE_BUF_SIZE];
+	decimalPlaces = min(decimalPlaces, DBL_MAX_DECIMAL_PLACES);
 	*this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
 }
 
