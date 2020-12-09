@@ -6,6 +6,8 @@
  * INCLUDE
  **************************************************************************************/
 
+#include <float.h>
+
 #include <catch.hpp>
 
 #include <String.h>
@@ -80,16 +82,40 @@ TEST_CASE ("Testing String(unsigned long, unsigned char base = 10) constructor()
 
 TEST_CASE ("Testing String(float, unsigned char decimalPlaces = 2) constructor()", "[String-Ctor-10]")
 {
-  float const val = 1.234f;
-  arduino::String str(val);
-  REQUIRE(strcmp(str.c_str(), "1.23") == 0);
+  WHEN ("String::String (some float value)")
+  {
+    arduino::String str(1.234f);
+    REQUIRE(strcmp(str.c_str(), "1.23") == 0);
+  }
+  WHEN ("String::String (FLT_MAX)")
+  {
+    arduino::String str(FLT_MAX);
+    REQUIRE(strcmp(str.c_str(), "340282346638528859811704183484516925440.00") == 0);
+  }
+  WHEN ("String::String (-FLT_MAX)")
+  {
+    arduino::String str(-FLT_MAX);
+    REQUIRE(strcmp(str.c_str(), "-340282346638528859811704183484516925440.00") == 0);
+  }
 }
 
 TEST_CASE ("Testing String(double, unsigned char decimalPlaces = 2) constructor()", "[String-Ctor-11]")
 {
-  double const val = 5.678;
-  arduino::String str(val);
-  REQUIRE(strcmp(str.c_str(), "5.68") == 0);
+  WHEN ("String::String (some double value)")
+  {
+    arduino::String str(5.678);
+    REQUIRE(strcmp(str.c_str(), "5.68") == 0);
+  }
+  WHEN ("String::String (DBL_MAX)")
+  {
+    arduino::String str(DBL_MAX);
+    REQUIRE(strcmp(str.c_str(), "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00") == 0);
+  }
+  WHEN ("String::String (-DBL_MAX)")
+  {
+    arduino::String str(-DBL_MAX);
+    REQUIRE(strcmp(str.c_str(), "-179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00") == 0);
+  }
 }
 
 TEST_CASE ("Testing String(const __FlashStringHelper) constructor() with invalid buffer", "[String-Ctor-12]")
