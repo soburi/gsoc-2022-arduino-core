@@ -23,11 +23,20 @@
 #include "itoa.h"
 #include "deprecated-avr-comp/avr/dtostrf.h"
 
+#include <float.h>
+
+namespace arduino {
+
+/*********************************************/
+/*  Static Member Initialisation             */
+/*********************************************/
+
+size_t const String::FLT_MAX_DECIMAL_PLACES;
+size_t const String::DBL_MAX_DECIMAL_PLACES;
+
 /*********************************************/
 /*  Constructors                             */
 /*********************************************/
-
-namespace arduino {
 
 String::String(const char *cstr)
 {
@@ -111,15 +120,17 @@ String::String(unsigned long value, unsigned char base)
 
 String::String(float value, unsigned char decimalPlaces)
 {
+	static size_t const FLOAT_BUF_SIZE = FLT_MAX_10_EXP + FLT_MAX_DECIMAL_PLACES + 1 /* '-' */ + 1 /* '.' */ + 1 /* '\0' */;
 	init();
-	char buf[33];
+	char buf[FLOAT_BUF_SIZE];
 	*this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
 }
 
 String::String(double value, unsigned char decimalPlaces)
 {
+	static size_t const DOUBLE_BUF_SIZE = DBL_MAX_10_EXP + DBL_MAX_DECIMAL_PLACES + 1 /* '-' */ + 1 /* '.' */ + 1 /* '\0' */;
 	init();
-	char buf[33];
+	char buf[DOUBLE_BUF_SIZE];
 	*this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
 }
 
