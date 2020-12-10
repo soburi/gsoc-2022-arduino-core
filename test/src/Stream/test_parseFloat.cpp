@@ -10,6 +10,8 @@
 
 #include <StreamMock.h>
 
+#include <float.h>
+
 /**************************************************************************************
  * TEST CODE
  **************************************************************************************/
@@ -42,6 +44,11 @@ TEST_CASE ("Testing parseFloat(LookaheadMode lookahead = SKIP_ALL, char ignore =
   {
     mock << "\r\n\t 12.34";
     REQUIRE(mock.parseFloat() == 12.34f);
+  }
+  WHEN ("A float is provided with too many digits")
+  {
+    mock << "3.1415926535897932384";
+    REQUIRE(abs(mock.parseFloat() - 3.141592654f) < 8 * FLT_EPSILON);
   }
 }
 
