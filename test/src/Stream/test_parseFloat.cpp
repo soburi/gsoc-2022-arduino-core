@@ -45,10 +45,15 @@ TEST_CASE ("Testing parseFloat(LookaheadMode lookahead = SKIP_ALL, char ignore =
     mock << "\r\n\t 12.34";
     REQUIRE(mock.parseFloat() == 12.34f);
   }
-  WHEN ("A float is provided with too many digits")
+  WHEN ("A float is provided with too many digits after the decimal point")
   {
     mock << "3.1415926535897932384";
     REQUIRE(mock.parseFloat() == Approx(3.141592654f));
+  }
+  WHEN ("A float is larger than LONG_MAX")
+  {
+    mock << "602200000000000000000000.00";
+    REQUIRE(mock.parseFloat() == Approx(6.022e23f));
   }
 }
 
