@@ -24,6 +24,7 @@
 
 #include "Common.h"
 #include "Stream.h"
+#include <math.h>
 
 #define PARSE_TIMEOUT 1000  // default number of milli-seconds to wait
 
@@ -162,9 +163,9 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
 {
   bool isNegative = false;
   bool isFraction = false;
-  long value = 0;
+  double value = 0.0;
   int c;
-  float fraction = 1.0;
+  unsigned int digits_post_comma = 0;
 
   c = peekNextDigit(lookahead, true);
     // ignore non numeric leading characters
@@ -181,7 +182,7 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
     else if(c >= '0' && c <= '9')  {      // is c a digit?
       value = value * 10 + c - '0';
       if(isFraction)
-         fraction *= 0.1;
+         digits_post_comma++;
     }
     read();  // consume the character we got with peek
     c = timedPeek();
@@ -190,10 +191,11 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
 
   if(isNegative)
     value = -value;
+
   if(isFraction)
-    return value * fraction;
-  else
-    return value;
+    value /= pow(10, digits_post_comma);
+
+  return value;
 }
 
 // read characters from stream into buffer
