@@ -27,14 +27,14 @@ TEST_CASE ("Testing String::remove(index) when index is > string length", "[Stri
 {
   arduino::String str("Hello Arduino!");
   str.remove(100);
-  REQUIRE(strcmp(str.c_str(), "Hello Arduino!") == 0);
+  REQUIRE(str == "Hello Arduino!");
 }
 
 TEST_CASE ("Testing String::remove(index) when index is < string length", "[String-remove-03]")
 {
   arduino::String str("Hello Arduino!");
   str.remove(5);
-  REQUIRE(strcmp(str.c_str(), "Hello") == 0);
+  REQUIRE(str == "Hello");
 }
 
 TEST_CASE ("Testing String::remove(index,count) when string is empty", "[String-remove-04]")
@@ -48,19 +48,19 @@ TEST_CASE ("Testing String::remove(index,count) when index is > string length", 
 {
   arduino::String str("Hello Arduino!");
   str.remove(100, 10);
-  REQUIRE(strcmp(str.c_str(), "Hello Arduino!") == 0);
+  REQUIRE(str == "Hello Arduino!");
 }
 
 TEST_CASE ("Testing String::remove(index,count) when index is < string length && count is > remaining length", "[String-remove-06]")
 {
   arduino::String str("Hello Arduino!");
   str.remove(5, 100);
-  REQUIRE(strcmp(str.c_str(), "Hello") == 0);
+  REQUIRE(str == "Hello");
 }
 
 TEST_CASE ("Testing String::remove(index,count) when index is < string length && count is < remaining length", "[String-remove-07]")
 {
   arduino::String str("Hello Arduino!");
   str.remove(5, 1);
-  REQUIRE(strcmp(str.c_str(), "HelloArduino!") == 0);
+  REQUIRE(str == "HelloArduino!");
 }

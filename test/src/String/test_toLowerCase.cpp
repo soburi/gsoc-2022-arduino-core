@@ -20,5 +20,5 @@ TEST_CASE ("Testing String::toLowerCase", "[String-toLowerCase-01]")
 {
   arduino::String str("HELLO ARDUINO");
   str.toLowerCase();
-  REQUIRE(strcmp(str.c_str(), "hello arduino") == 0);
+  REQUIRE(str == "hello arduino");
 }

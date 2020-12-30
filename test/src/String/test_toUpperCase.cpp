@@ -20,5 +20,5 @@ TEST_CASE ("Testing String::toUpperCase", "[String-toUpperCase-01]")
 {
   arduino::String str("hello arduino");
   str.toUpperCase();
-  REQUIRE(strcmp(str.c_str(), "HELLO ARDUINO") == 0);
+  REQUIRE(str == "HELLO ARDUINO");
 }

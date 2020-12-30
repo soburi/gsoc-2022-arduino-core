@@ -28,13 +28,13 @@ TEST_CASE ("Testing String::substring(unsigned int, unsigned int)", "[String-sub
   {
     arduino::String str1("Hello");
     arduino::String str2("ello");
-    REQUIRE(str2.compareTo(str1.substring(1,9)) == 0);
+    REQUIRE(str2 == str1.substring(1,9));
   }
 
   WHEN ("left higher than right")
   {
     arduino::String str1("Hello");
     arduino::String str2("ello");
-    REQUIRE(str2.compareTo(str1.substring(9,1)) == 0);
+    REQUIRE(str2 == str1.substring(9,1));
   }
 }
