@@ -121,12 +121,20 @@ TEST_CASE ("Testing & String::operator = (const String &) with invalid buffer of
   REQUIRE(str1.compareTo(str2) == 0);
 }
 
-TEST_CASE ("Testing & String::operator = (const char *)", "[String-operator+-14]")
+TEST_CASE ("Testing & String::operator = (const char *) with NULL does not leave string unchanged", "[String-operator+-14]")
 {
   char *buffer = NULL;
   arduino::String str("Hello");
   str = buffer;
-  REQUIRE(str.compareTo("Hello") == 0);
+  REQUIRE(str.compareTo("Hello") != 0);
+}
+
+TEST_CASE ("Testing & String::operator = (const char *) with NULL produces invalid string", "[String-operator+-14]")
+{
+  char *buffer = NULL;
+  arduino::String str("Hello");
+  str = buffer;
+  REQUIRE_FALSE(str);
 }
 
 TEST_CASE ("Testing & String::operator = (const String &) with invalid buffer of first string", "[String-operator+-15]")

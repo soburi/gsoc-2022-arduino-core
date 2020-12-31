@@ -127,7 +127,7 @@ TEST_CASE ("Testing String(const __FlashStringHelper) constructor() with invalid
   char *buffer = NULL;
 
   arduino::String str1(F(buffer));
-  REQUIRE(str1.compareTo("Hello") == 0);
+  REQUIRE_FALSE(str1);
 }
 
 TEST_CASE ("Testing String(StringSumHelper &&) constructor()", "[String-Ctor-13]")
@@ -158,5 +158,5 @@ TEST_CASE ("Testing String(String &&) with move(String &rhs) from larger to smal
   arduino::String str("Hello");
   arduino::String str1("Arduino");
   str = static_cast<arduino::String&&>(str1);
-  REQUIRE(str1.compareTo("Arduino") == 0);
+  REQUIRE(str.compareTo("Arduino") == 0);
 }
