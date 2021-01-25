@@ -179,9 +179,12 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
     else if (c == '.')
       isFraction = true;
     else if(c >= '0' && c <= '9')  {      // is c a digit?
-      value = value * 10 + c - '0';
-      if(isFraction)
-         fraction *= 0.1;
+      if(isFraction) {
+        fraction *= 0.1;
+        value = value + fraction * (c - '0');
+      } else {
+        value = value * 10 + c - '0';
+      }
     }
     read();  // consume the character we got with peek
     c = timedPeek();
@@ -190,9 +193,6 @@ float Stream::parseFloat(LookaheadMode lookahead, char ignore)
 
   if(isNegative)
     value = -value;
-
-  if(isFraction)
-    value *= fraction;
 
   return value;
 }
