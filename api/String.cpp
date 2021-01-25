@@ -462,7 +462,7 @@ int String::compareTo(const String &s) const
 int String::compareTo(const char *cstr) const
 {
 	if (!buffer || !cstr) {
-		if (cstr && !*cstr) return 0 - *(unsigned char *)cstr;
+		if (cstr && *cstr) return 0 - *(unsigned char *)cstr;
 		if (buffer && len > 0) return *(unsigned char *)buffer;
 		return 0;
 	}

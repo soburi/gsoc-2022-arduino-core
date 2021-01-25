@@ -10,6 +10,8 @@
 
 #include <String.h>
 
+#include "StringPrinter.h"
+
 /**************************************************************************************
  * TEST CODE
  **************************************************************************************/
@@ -24,7 +26,7 @@ TEST_CASE ("Testing String::setCharAt(unsigned int, char )", "[String-setCharAt-
 {
   arduino::String str1("Hello");
   str1.setCharAt(1, 'a');
-  REQUIRE(str1.compareTo("Hallo") == 0);
+  REQUIRE(str1 == "Hallo");
 }
 
 TEST_CASE ("Testing String::getBytes(unsigned char, unsigned int, unsigned int)", "[String-getBytes-02]")
