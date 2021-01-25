@@ -68,6 +68,8 @@ public:
 	// fails, the string will be marked as invalid (i.e. "if (s)" will
 	// be false).
 	String(const char *cstr = "");
+	String(const char *cstr, unsigned int length);
+	String(const uint8_t *cstr, unsigned int length) : String((const char*)cstr, length) {}
 	String(const String &str);
 	String(const __FlashStringHelper *str);
 	#if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
@@ -109,6 +111,8 @@ public:
 	// concatenation is considered unsucessful.
 	unsigned char concat(const String &str);
 	unsigned char concat(const char *cstr);
+	unsigned char concat(const char *cstr, unsigned int length);
+	unsigned char concat(const uint8_t *cstr, unsigned int length) {return concat((const char*)cstr, length);}
 	unsigned char concat(char c);
 	unsigned char concat(unsigned char num);
 	unsigned char concat(int num);
@@ -225,7 +229,6 @@ protected:
 	void init(void);
 	void invalidate(void);
 	unsigned char changeBuffer(unsigned int maxStrLen);
-	unsigned char concat(const char *cstr, unsigned int length);
 
 	// copy and move
 	String & copy(const char *cstr, unsigned int length);
