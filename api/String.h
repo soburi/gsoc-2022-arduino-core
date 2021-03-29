@@ -255,5 +255,8 @@ public:
 
 } // namespace arduino
 
+using arduino::__FlashStringHelper;
+using arduino::String;
+
 #endif  // __cplusplus
 #endif  // __ARDUINO_STRINGS__

@@ -88,5 +88,3 @@ protected:
 };
 
 }
-
-using namespace arduino;
