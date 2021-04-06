@@ -93,4 +93,4 @@ class Print
 };
 
 }
-using namespace arduino;
+using arduino::Print;
