@@ -83,3 +83,5 @@ public:
 
 extern const IPAddress INADDR_NONE;
 }
+
+using arduino::IPAddress;

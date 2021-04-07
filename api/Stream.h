@@ -129,3 +129,5 @@ class Stream : public Print
 #undef NO_IGNORE_CHAR
 
 }
+
+using arduino::Stream;

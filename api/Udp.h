@@ -88,3 +88,5 @@ protected:
 };
 
 }
+
+using arduino::UDP;
