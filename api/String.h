@@ -106,7 +106,7 @@ public:
 
 	// returns true on success, false on failure (in which case, the string
 	// is left unchanged).  if the argument is null or invalid, the
-	// concatenation is considered unsucessful.
+	// concatenation is considered unsuccessful.
 	bool concat(const String &str);
 	bool concat(const char *cstr);
 	bool concat(const char *cstr, unsigned int length);
@@ -179,7 +179,7 @@ public:
 	bool startsWith(const String &prefix, unsigned int offset) const;
 	bool endsWith(const String &suffix) const;
 
-	// character acccess
+	// character access
 	char charAt(unsigned int index) const;
 	void setCharAt(unsigned int index, char c);
 	char operator [] (unsigned int index) const;
