@@ -2,6 +2,7 @@
 
 [![Unit Tests](https://github.com/arduino/ArduinoCore-API/workflows/Unit%20Tests/badge.svg)](https://github.com/arduino/ArduinoCore-API/actions?workflow=Unit+Tests)
 [![codecov](https://codecov.io/gh/arduino/ArduinoCore-API/branch/master/graph/badge.svg)](https://codecov.io/gh/arduino/ArduinoCore-API)
+[![Spell Check status](https://github.com/arduino/ArduinoCore-API/actions/workflows/spell-check.yml/badge.svg)](https://github.com/arduino/ArduinoCore-API/actions/workflows/spell-check.yml)
 
 This repository hosts the hardware independent layer of Arduino core.
 
