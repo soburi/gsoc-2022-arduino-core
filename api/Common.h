@@ -16,10 +16,11 @@ typedef enum {
 } PinStatus;
 
 typedef enum {
-  INPUT           = 0x0,
-  OUTPUT          = 0x1,
-  INPUT_PULLUP    = 0x2,
-  INPUT_PULLDOWN  = 0x3,
+  INPUT            = 0x0,
+  OUTPUT           = 0x1,
+  INPUT_PULLUP     = 0x2,
+  INPUT_PULLDOWN   = 0x3,
+  OUTPUT_OPENDRAIN = 0x4,
 } PinMode;
 
 typedef enum {
