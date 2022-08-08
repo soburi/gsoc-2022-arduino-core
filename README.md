@@ -30,7 +30,7 @@ Example command:
 tar --exclude='*.git*' -cjhvf $yourcore-$version.tar.bz2 $yourcore/
 ```
 
-Documentation how integrate with a Arduino core (which is necessary if you do not download the Arduino core via the board manager) can be found here:
+Documentation for how to integrate with a Arduino core (which is necessary if you do not download the Arduino core via the Boards Manager) can be found here:
 * [ArduinoCore-megaavr](https://github.com/arduino/ArduinoCore-megaavr#developing)
 * [ArduinoCore-mbed](https://github.com/arduino/ArduinoCore-mbed#clone-the-repository-in-sketchbookhardwarearduino-git)
 * [ArduinoCore-samd](https://github.com/arduino/ArduinoCore-samd/#developing)
