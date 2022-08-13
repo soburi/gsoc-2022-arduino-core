@@ -32,45 +32,67 @@ namespace arduino {
 
 // A class to make it easier to handle and pass around IP addresses
 
+enum IPType {
+    IPv4,
+    IPv6
+};
+
 class IPAddress : public Printable {
 private:
     union {
-	uint8_t bytes[4];  // IPv4 address
-	uint32_t dword;
+    uint8_t bytes[16];
+    uint32_t dword[4];
     } _address;
+    IPType _type;
 
     // Access the raw byte array containing the address.  Because this returns a pointer
     // to the internal structure rather than a copy of the address this function should only
     // be used when you know that the usage of the returned uint8_t* will be transient and not
     // stored.
-    uint8_t* raw_address() { return _address.bytes; };
+    // IPv4 only (for friends)
+    uint8_t* raw_address() {
+        if (_type == IPv4) {
+            return &_address.bytes[12];
+        }
+        return nullptr;
+    };
+    uint8_t* raw_bytes() { return _address.bytes; }
 
 public:
     // Constructors
-    IPAddress();
+    IPAddress(); // IPv4
+    IPAddress(IPType ip_type);
     IPAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
-    IPAddress(uint32_t address);
-    IPAddress(const uint8_t *address);
+    IPAddress(uint32_t address); // IPv4 only; see implementation note
+    IPAddress(const uint8_t *address); // IPv4
+    IPAddress(IPType ip_type, const uint8_t *address);
 
     bool fromString(const char *address);
     bool fromString(const String &address) { return fromString(address.c_str()); }
 
-    // Overloaded cast operator to allow IPAddress objects to be used where a pointer
-    // to a four-byte uint8_t array is expected
-    operator uint32_t() const { return _address.dword; };
-    bool operator==(const IPAddress& addr) const { return _address.dword == addr._address.dword; };
-    bool operator!=(const IPAddress& addr) const { return _address.dword != addr._address.dword; };
+    // Overloaded cast operator to allow IPAddress objects to be used where a uint32_t is expected
+    // IPv4 only; see implementation note
+    operator uint32_t() const { return _type == IPv4 ? _address.dword[3] : 0; };
+
+    bool operator==(const IPAddress& addr) const;
+    bool operator!=(const IPAddress& addr) const { return !(*this == addr); };
+
+    // IPv4 only; we don't know the length of the pointer
     bool operator==(const uint8_t* addr) const;
 
     // Overloaded index operator to allow getting and setting individual octets of the address
-    uint8_t operator[](int index) const { return _address.bytes[index]; };
-    uint8_t& operator[](int index) { return _address.bytes[index]; };
+    uint8_t operator[](int index) const;
+    uint8_t& operator[](int index);
 
     // Overloaded copy operators to allow initialisation of IPAddress objects from other types
+    // IPv4 only
     IPAddress& operator=(const uint8_t *address);
+    // IPv4 only; see implementation note
     IPAddress& operator=(uint32_t address);
 
     virtual size_t printTo(Print& p) const;
+
+    IPType type() { return _type; }
 
     friend class UDP;
     friend class Client;
@@ -79,8 +101,13 @@ public:
     friend ::EthernetClass;
     friend ::DhcpClass;
     friend ::DNSClient;
+
+protected:
+    bool fromString4(const char *address);
+    bool fromString6(const char *address);
 };
 
+extern const IPAddress IN6ADDR_ANY;
 extern const IPAddress INADDR_NONE;
 }
 
