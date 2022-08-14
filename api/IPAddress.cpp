@@ -33,11 +33,11 @@ IPAddress::IPAddress(IPType ip_type)
 IPAddress::IPAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet)
 {
     _type = IPv4;
-    memset(_address.bytes, 0, sizeof(_address.bytes) - sizeof(uint32_t));
-    _address.bytes[12] = first_octet;
-    _address.bytes[13] = second_octet;
-    _address.bytes[14] = third_octet;
-    _address.bytes[15] = fourth_octet;
+    memset(_address.bytes, 0, sizeof(_address.bytes));
+    _address.bytes[IPADDRESS_V4_BYTES_INDEX] = first_octet;
+    _address.bytes[IPADDRESS_V4_BYTES_INDEX + 1] = second_octet;
+    _address.bytes[IPADDRESS_V4_BYTES_INDEX + 2] = third_octet;
+    _address.bytes[IPADDRESS_V4_BYTES_INDEX + 3] = fourth_octet;
 }
 
 IPAddress::IPAddress(uint8_t o1, uint8_t o2, uint8_t o3, uint8_t o4, uint8_t o5, uint8_t o6, uint8_t o7, uint8_t o8, uint8_t o9, uint8_t o10, uint8_t o11, uint8_t o12, uint8_t o13, uint8_t o14, uint8_t o15, uint8_t o16) {
@@ -64,8 +64,8 @@ IPAddress::IPAddress(uint32_t address)
 {
     // IPv4 only
     _type = IPv4;
-    memset(_address.bytes, 0, sizeof(_address.bytes) - sizeof(uint32_t));
-    _address.dword[3] = address;
+    memset(_address.bytes, 0, sizeof(_address.bytes));
+    _address.dword[IPADDRESS_V4_DWORD_INDEX] = address;
 
     // NOTE on conversion/comparison and uint32_t:
     // These conversions are host platform dependent.
@@ -82,8 +82,8 @@ IPAddress::IPAddress(IPType ip_type, const uint8_t *address)
 {
     _type = ip_type;
     if (ip_type == IPv4) {
-        memset(_address.bytes, 0, sizeof(_address.bytes) - sizeof(uint32_t));
-        memcpy(&_address.bytes[12], address, sizeof(uint32_t));
+        memset(_address.bytes, 0, sizeof(_address.bytes));
+        memcpy(&_address.bytes[IPADDRESS_V4_BYTES_INDEX], address, sizeof(uint32_t));
     } else {
         memcpy(_address.bytes, address, sizeof(_address.bytes));
     }
@@ -103,6 +103,7 @@ bool IPAddress::fromString4(const char *address)
     int16_t acc = -1; // Accumulator
     uint8_t dots = 0;
 
+    memset(_address.bytes, 0, sizeof(_address.bytes));
     while (*address)
     {
         char c = *address++;
@@ -124,7 +125,7 @@ bool IPAddress::fromString4(const char *address)
                 /* No value between dots, e.g. '1..' */
                 return false;
             }
-            _address.bytes[12 + dots++] = acc;
+            _address.bytes[IPADDRESS_V4_BYTES_INDEX + dots++] = acc;
             acc = -1;
         }
         else
@@ -142,8 +143,7 @@ bool IPAddress::fromString4(const char *address)
         /* No value between dots, e.g. '1..' */
         return false;
     }
-    memset(_address.bytes, 0, sizeof(_address.bytes) - sizeof(uint32_t));
-    _address.bytes[15] = acc;
+    _address.bytes[IPADDRESS_V4_BYTES_INDEX + 3] = acc;
     _type = IPv4;
     return true;
 }
@@ -220,8 +220,8 @@ IPAddress& IPAddress::operator=(const uint8_t *address)
 {
     // IPv4 only conversion from byte pointer
     _type = IPv4;
-    memset(_address.bytes, 0, sizeof(_address.bytes) - sizeof(uint32_t));
-    memcpy(&_address.bytes[12], address, sizeof(uint32_t));
+    memset(_address.bytes, 0, sizeof(_address.bytes));
+    memcpy(&_address.bytes[IPADDRESS_V4_BYTES_INDEX], address, sizeof(uint32_t));
     return *this;
 }
 
@@ -230,10 +230,8 @@ IPAddress& IPAddress::operator=(uint32_t address)
     // IPv4 conversion
     // See note on conversion/comparison and uint32_t
     _type = IPv4;
-    _address.dword[0] = 0;
-    _address.dword[1] = 0;
-    _address.dword[2] = 0;
-    _address.dword[3] = address;
+    memset(_address.bytes, 0, sizeof(_address.bytes));
+    _address.dword[IPADDRESS_V4_DWORD_INDEX] = address;
     return *this;
 }
 
@@ -246,19 +244,19 @@ bool IPAddress::operator==(const uint8_t* addr) const
 {
     // IPv4 only comparison to byte pointer
     // Can't support IPv6 as we know our type, but not the length of the pointer
-    return _type == IPv4 && memcmp(addr, &_address.bytes[12], sizeof(uint32_t)) == 0;
+    return _type == IPv4 && memcmp(addr, &_address.bytes[IPADDRESS_V4_BYTES_INDEX], sizeof(uint32_t)) == 0;
 }
 
 uint8_t IPAddress::operator[](int index) const {
     if (_type == IPv4) {
-        return _address.bytes[index + 12];
+        return _address.bytes[IPADDRESS_V4_BYTES_INDEX + index];
     }
     return _address.bytes[index];
 };
 
 uint8_t& IPAddress::operator[](int index) {
     if (_type == IPv4) {
-        return _address.bytes[index + 12];
+        return _address.bytes[IPADDRESS_V4_BYTES_INDEX + index];
     }
     return _address.bytes[index];
 };
@@ -321,10 +319,10 @@ size_t IPAddress::printTo(Print& p) const
     // IPv4
     for (int i =0; i < 3; i++)
     {
-        n += p.print(_address.bytes[12 + i], DEC);
+        n += p.print(_address.bytes[IPADDRESS_V4_BYTES_INDEX + i], DEC);
         n += p.print('.');
     }
-    n += p.print(_address.bytes[15], DEC);
+    n += p.print(_address.bytes[IPADDRESS_V4_BYTES_INDEX + 3], DEC);
     return n;
 }
 
