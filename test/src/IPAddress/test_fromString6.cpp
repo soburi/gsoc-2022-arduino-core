@@ -298,7 +298,7 @@ TEST_CASE ("Extract valid IPv6 upper case", "[IPAddress-fromString-11]")
   REQUIRE(ip[15] == 0xc);
 }
 
-TEST_CASE ("Extract valid IPv6 explict start zero", "[IPAddress-fromString-10]")
+TEST_CASE ("Extract valid IPv6 explicit start zero", "[IPAddress-fromString-10]")
 {
   arduino::IPAddress ip;
 
@@ -323,7 +323,7 @@ TEST_CASE ("Extract valid IPv6 explict start zero", "[IPAddress-fromString-10]")
   REQUIRE(ip[15] == 0);
 }
 
-TEST_CASE ("Extract valid IPv6 explict end zero", "[IPAddress-fromString-10]")
+TEST_CASE ("Extract valid IPv6 explicit end zero", "[IPAddress-fromString-10]")
 {
   arduino::IPAddress ip;
 
