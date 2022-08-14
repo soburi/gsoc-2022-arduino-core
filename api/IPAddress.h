@@ -57,7 +57,7 @@ public:
     IPAddress(IPType ip_type);
     IPAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
     IPAddress(uint8_t o1, uint8_t o2, uint8_t o3, uint8_t o4, uint8_t o5, uint8_t o6, uint8_t o7, uint8_t o8, uint8_t o9, uint8_t o10, uint8_t o11, uint8_t o12, uint8_t o13, uint8_t o14, uint8_t o15, uint8_t o16);
-    IPAddress(uint32_t address); // IPv4 only; see implementation note
+    IPAddress(uint32_t address); // IPv4; see implementation note
     IPAddress(const uint8_t *address); // IPv4
     IPAddress(IPType ip_type, const uint8_t *address);
 
@@ -65,13 +65,13 @@ public:
     bool fromString(const String &address) { return fromString(address.c_str()); }
 
     // Overloaded cast operator to allow IPAddress objects to be used where a uint32_t is expected
-    // IPv4 only; see implementation note
+    // NOTE: IPv4 only; see implementation note
     operator uint32_t() const { return _type == IPv4 ? _address.dword[3] : 0; };
 
     bool operator==(const IPAddress& addr) const;
     bool operator!=(const IPAddress& addr) const { return !(*this == addr); };
 
-    // IPv4 only; we don't know the length of the pointer
+    // NOTE: IPv4 only; we don't know the length of the pointer
     bool operator==(const uint8_t* addr) const;
 
     // Overloaded index operator to allow getting and setting individual octets of the address
@@ -79,9 +79,9 @@ public:
     uint8_t& operator[](int index);
 
     // Overloaded copy operators to allow initialisation of IPAddress objects from other types
-    // IPv4 only
+    // NOTE: IPv4 only
     IPAddress& operator=(const uint8_t *address);
-    // IPv4 only; see implementation note
+    // NOTE: IPv4 only; see implementation note
     IPAddress& operator=(uint32_t address);
 
     virtual size_t printTo(Print& p) const;
