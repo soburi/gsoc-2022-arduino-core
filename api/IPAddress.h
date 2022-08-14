@@ -40,8 +40,8 @@ enum IPType {
 class IPAddress : public Printable {
 private:
     union {
-    uint8_t bytes[16];
-    uint32_t dword[4];
+        uint8_t bytes[16];
+        uint32_t dword[4];
     } _address;
     IPType _type;
 
