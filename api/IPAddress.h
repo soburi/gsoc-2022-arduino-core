@@ -49,14 +49,7 @@ private:
     // to the internal structure rather than a copy of the address this function should only
     // be used when you know that the usage of the returned uint8_t* will be transient and not
     // stored.
-    // IPv4 only (for friends)
-    uint8_t* raw_address() {
-        if (_type == IPv4) {
-            return &_address.bytes[12];
-        }
-        return nullptr;
-    };
-    uint8_t* raw_bytes() { return _address.bytes; }
+    uint8_t* raw_address() { return _type == IPv4 ? &_address.bytes[12] : _address.bytes; }
 
 public:
     // Constructors
