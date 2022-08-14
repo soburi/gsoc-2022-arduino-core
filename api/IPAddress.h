@@ -53,12 +53,16 @@ private:
 
 public:
     // Constructors
-    IPAddress(); // IPv4
+
+    // Default IPv4
+    IPAddress();
     IPAddress(IPType ip_type);
     IPAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
     IPAddress(uint8_t o1, uint8_t o2, uint8_t o3, uint8_t o4, uint8_t o5, uint8_t o6, uint8_t o7, uint8_t o8, uint8_t o9, uint8_t o10, uint8_t o11, uint8_t o12, uint8_t o13, uint8_t o14, uint8_t o15, uint8_t o16);
-    IPAddress(uint32_t address); // IPv4; see implementation note
-    IPAddress(const uint8_t *address); // IPv4
+     // IPv4; see implementation note
+    IPAddress(uint32_t address);
+     // Default IPv4
+    IPAddress(const uint8_t *address);
     IPAddress(IPType ip_type, const uint8_t *address);
 
     bool fromString(const char *address);
