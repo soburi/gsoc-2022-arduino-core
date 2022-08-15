@@ -63,3 +63,10 @@ TEST_CASE ("Testing IPv4 equivalent compatible address vs IPv6 localhost", "[IPA
   arduino::IPAddress ip1(0, 0, 0, 1), ip2(0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,1);
   REQUIRE((ip1 == ip2) == false);
 }
+
+TEST_CASE ("Testing IPv6 never matches as raw byte sequence assumed to be length 4", "[IPAddress6-Operator-==-06]")
+{
+  arduino::IPAddress ip1(0x20,0x01, 0xd,0xb8, 1,2, 3,4, 5,6, 7,8, 9,0xa, 0xb,0xc);
+  uint8_t const ip2[] = {0x20,0x01, 0xd,0xb8, 1,2, 3,4, 5,6, 7,8, 9,0xa, 0xb,0xc};
+  REQUIRE((ip1 == ip2) == false);
+}
