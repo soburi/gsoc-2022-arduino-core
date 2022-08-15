@@ -37,6 +37,7 @@ set(TEST_SRCS
   src/IPAddress/test_operator_comparison.cpp
   src/IPAddress/test_operator_comparison6.cpp
   src/IPAddress/test_operator_parentheses.cpp
+  src/IPAddress/test_operator_parentheses6.cpp
   src/IPAddress/test_printTo.cpp
   src/IPAddress/test_printTo6.cpp
   src/Print/test_clearWriteError.cpp
