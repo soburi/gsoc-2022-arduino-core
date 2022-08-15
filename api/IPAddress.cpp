@@ -150,7 +150,7 @@ bool IPAddress::fromString4(const char *address)
 
 bool IPAddress::fromString6(const char *address) {
     uint32_t acc = 0; // Accumulator
-    int dots = 0, doubledots = -1;
+    int colons = 0, double_colons = -1;
 
     while (*address)
     {
@@ -165,7 +165,7 @@ bool IPAddress::fromString6(const char *address) {
         }
         else if (c == ':') {
             if (*address == ':') {
-                if (doubledots >= 0) {
+                if (double_colons >= 0) {
                     // :: allowed once
                     return false;
                 }
@@ -174,18 +174,18 @@ bool IPAddress::fromString6(const char *address) {
                     return false;
                 }
                 // remember location
-                doubledots = dots + !!acc;
+                double_colons = colons + !!acc;
                 address++;
             } else if (*address == '\0') {
                 // can't end with a single colon
                 return false;
             }
-            if (dots == 7)
+            if (colons == 7)
                 // too many separators
                 return false;
-            _address.bytes[dots * 2] = acc >> 8;
-            _address.bytes[dots * 2 + 1] = acc & 0xff;
-            dots++;
+            _address.bytes[colons * 2] = acc >> 8;
+            _address.bytes[colons * 2 + 1] = acc & 0xff;
+            colons++;
             acc = 0;
         }
         else
@@ -193,22 +193,22 @@ bool IPAddress::fromString6(const char *address) {
             return false;
     }
 
-    if (doubledots == -1 && dots != 7) {
+    if (double_colons == -1 && colons != 7) {
         // Too few separators
         return false;
     }
-    if (doubledots > -1 && dots > 6) {
-        // Too many segments
+    if (double_colons > -1 && colons > 6) {
+        // Too many segments (double colon must be at least one zero field)
         return false;
     }
-    _address.bytes[dots * 2] = acc >> 8;
-    _address.bytes[dots * 2 + 1] = acc & 0xff;
-    dots++;
+    _address.bytes[colons * 2] = acc >> 8;
+    _address.bytes[colons * 2 + 1] = acc & 0xff;
+    colons++;
 
-    if (doubledots != -1) {
-        for (int i = dots * 2 - doubledots * 2 - 1; i >= 0; i--)
-            _address.bytes[16 - dots * 2 + doubledots * 2 + i] = _address.bytes[doubledots * 2 + i];
-        for (int i = doubledots * 2; i < 16 - dots * 2 + doubledots * 2; i++)
+    if (double_colons != -1) {
+        for (int i = colons * 2 - double_colons * 2 - 1; i >= 0; i--)
+            _address.bytes[16 - colons * 2 + double_colons * 2 + i] = _address.bytes[double_colons * 2 + i];
+        for (int i = double_colons * 2; i < 16 - colons * 2 + double_colons * 2; i++)
             _address.bytes[i] = 0;
     }
 
