@@ -44,6 +44,18 @@ This repository includes a test suite that covers most of the API and that is de
 
 Please help us improve the coverage of the test suite!
 
+#### To build and run unit tests
+
+The unit tests are automatically built by GitHub as part of pull request checks (in `.github/workflows/unit-tests.yml`).
+
+To build and run locally (from the project root):
+
+```
+cmake -S test -B test/build
+make --directory test/build
+test/build/bin/test-ArduinoCore-API
+```
+
 ### Implementing ArduinoCore-API
 
 In order to compile a core which is implementing ArduinoCore-API you'll need to copy/symlink the `api` directory to the target's `cores/arduino` directory as part of your development and release workflow. The most elegant and effective solution is to develop your core with `api` symlinked and produce the distributable archive by telling `tar` to follow symlinks. Example:
