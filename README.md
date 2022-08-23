@@ -48,7 +48,15 @@ Please help us improve the coverage of the test suite!
 
 The unit tests are automatically built by GitHub as part of pull request checks (in `.github/workflows/unit-tests.yml`).
 
-To build and run locally (from the project root):
+To build and run locally:
+
+**Dependencies**
+
+* CMake
+* make
+* gcc
+
+From the project root:
 
 ```
 cmake -S test -B test/build
