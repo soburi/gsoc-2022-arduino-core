@@ -52,13 +52,18 @@ To build and run locally:
 
 **Dependencies**
 
-* CMake
-* make
-* gcc
+* [CMake](https://cmake.org/)
+* [GCC](https://gcc.gnu.org/)
+
+On (Ubuntu) Linux run:
+
+```bash
+sudo apt-get install build-essential cmake
+```
 
 From the project root:
 
-```
+```bash
 cd test && mkdir build && cd build
 cmake ..
 make && bin/test-ArduinoCore-API
@@ -68,7 +73,7 @@ make && bin/test-ArduinoCore-API
 
 In order to compile a core which is implementing ArduinoCore-API you'll need to copy/symlink the `api` directory to the target's `cores/arduino` directory as part of your development and release workflow. The most elegant and effective solution is to develop your core with `api` symlinked and produce the distributable archive by telling `tar` to follow symlinks. Example:
 
-```
+```bash
 tar --exclude='*.git*' -cjhvf $yourcore-$version.tar.bz2 $yourcore/
 ```
 
