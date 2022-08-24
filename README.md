@@ -59,9 +59,9 @@ To build and run locally:
 From the project root:
 
 ```
-cmake -S test -B test/build
-make --directory test/build
-test/build/bin/test-ArduinoCore-API
+cd test && mkdir build && cd build
+cmake ..
+make && bin/test-ArduinoCore-API
 ```
 
 ### Implementing ArduinoCore-API
