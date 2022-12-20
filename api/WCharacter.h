@@ -63,7 +63,7 @@ inline bool isAlpha(int c)
 // that fits into the ASCII character set.
 inline bool isAscii(int c)
 {
-  return ( isascii (c) == 0 ? false : true);
+  return ((c & ~0x7f) != 0 ? false : true );
 }
 
 
