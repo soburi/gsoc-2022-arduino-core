@@ -90,6 +90,7 @@ set(TEST_SRCS
   src/WCharacter/test_isSpace.cpp
   src/WCharacter/test_isUpperCase.cpp
   src/WCharacter/test_isWhitespace.cpp
+  src/WCharacter/test_toAscii.cpp
 )
 
 set(TEST_DUT_SRCS
