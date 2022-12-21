@@ -145,7 +145,7 @@ inline bool isHexadecimalDigit(int c)
 // ASCII character set, by clearing the high-order bits.
 inline int toAscii(int c)
 {
-  return toascii (c);
+  return (c & 0x7f);
 }
 
 
