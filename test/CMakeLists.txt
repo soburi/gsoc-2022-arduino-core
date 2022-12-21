@@ -10,7 +10,7 @@ project(test-ArduinoCore-API)
 
 include_directories(../api)
 include_directories(include)
-include_directories(external/catch/v2.13.1/include)
+include_directories(external/catch/v2.13.9/include)
 
 ##########################################################################
 
@@ -81,6 +81,7 @@ set(TEST_SRCS
   src/String/test_toLowerCase.cpp
   src/String/test_toUpperCase.cpp
   src/String/test_trim.cpp
+  src/WCharacter/test_isAscii.cpp
   src/WCharacter/test_isControl.cpp
   src/WCharacter/test_isDigit.cpp
   src/WCharacter/test_isHexadecimalDigit.cpp
@@ -89,6 +90,7 @@ set(TEST_SRCS
   src/WCharacter/test_isSpace.cpp
   src/WCharacter/test_isUpperCase.cpp
   src/WCharacter/test_isWhitespace.cpp
+  src/WCharacter/test_toAscii.cpp
 )
 
 set(TEST_DUT_SRCS
