@@ -7,8 +7,11 @@
 #include <Arduino.h>
 #include "zephyrInternal.h"
 
-static const struct gpio_dt_spec arduino_pins[] = {DT_FOREACH_PROP_ELEM_SEP(
-	DT_PATH(zephyr_user), digital_pin_gpios, GPIO_DT_SPEC_GET_BY_IDX, (, ))};
+static const struct gpio_dt_spec arduino_pins[] = {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
+	DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios, GPIO_DT_SPEC_GET_BY_IDX, (, )),
+#endif
+};
 
 namespace {
 
@@ -61,12 +64,21 @@ constexpr const size_t is_first_appearance(const size_t &idx, const size_t &at, 
   is_first_appearance(0, i, ((size_t)-1), DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(n, p, i)),       \
           DT_FOREACH_PROP_ELEM_SEP_VARGS(n, p, GET_DEVICE_VARGS, (, ), 0))
 const int port_num =
-  sum_of_list(0, DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios,
-            FIRST_APPEARANCE, (, )));
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
+	sum_of_list(0, DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios,
+						 FIRST_APPEARANCE, (, )));
+#else
+	0;
+#endif
 
 #define GPIO_NGPIOS(n, p, i) DT_PROP(DT_GPIO_CTLR_BY_IDX(n, p, i), ngpios)
-const int max_ngpios = max_in_list(
-  0, DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios, GPIO_NGPIOS, (, )));
+const int max_ngpios =
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
+	max_in_list(0, DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios,
+						 GPIO_NGPIOS, (, )));
+#else
+	0;
+#endif
 
 /*
  * GPIO callback implementation
@@ -82,7 +94,7 @@ struct gpio_port_callback {
   struct arduino_callback handlers[max_ngpios];
   gpio_port_pins_t pins;
   const struct device *dev;
-} port_callback[port_num] = {0};
+} port_callback[port_num];
 
 struct gpio_port_callback *find_gpio_port_callback(const struct device *dev)
 {
@@ -108,6 +120,7 @@ void setInterruptHandler(pin_size_t pinNumber, voidFuncPtr func)
   }
 }
 
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
 void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
   struct gpio_port_callback *pcb = (struct gpio_port_callback *)cb;
@@ -118,6 +131,7 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
     }
   }
 }
+#endif
 
 #ifdef CONFIG_PWM
 
@@ -187,6 +201,7 @@ void yield(void) {
  *  A high physical level will be interpreted as value 1
  */
 void pinMode(pin_size_t pinNumber, PinMode pinMode) {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   if (pinMode == INPUT) { // input mode
     gpio_pin_configure_dt(&arduino_pins[pinNumber],
                           GPIO_INPUT | GPIO_ACTIVE_HIGH);
@@ -200,14 +215,21 @@ void pinMode(pin_size_t pinNumber, PinMode pinMode) {
     gpio_pin_configure_dt(&arduino_pins[pinNumber],
                           GPIO_OUTPUT_LOW | GPIO_ACTIVE_HIGH);
   }
+#endif
 }
 
 void digitalWrite(pin_size_t pinNumber, PinStatus status) {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   gpio_pin_set_dt(&arduino_pins[pinNumber], status);
+#endif
 }
 
 PinStatus digitalRead(pin_size_t pinNumber) {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   return (gpio_pin_get_dt(&arduino_pins[pinNumber]) == 1) ? HIGH : LOW;
+#else
+  return LOW;
+#endif
 }
 
 struct k_timer arduino_pin_timers[ARRAY_SIZE(arduino_pins)];
@@ -224,6 +246,7 @@ void tone_timeout_cb(struct k_timer *timer) {
 }
 
 void tone(pin_size_t pinNumber, unsigned int frequency, unsigned long duration) {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   struct k_timer *timer = &arduino_pin_timers[pinNumber];
   const struct gpio_dt_spec *spec = &arduino_pins[pinNumber];
   k_timeout_t timeout;
@@ -248,11 +271,14 @@ void tone(pin_size_t pinNumber, unsigned int frequency, unsigned long duration) 
     k_timer_user_data_set(timer, (void*)(uintptr_t)pinNumber);
     k_timer_start(timer, K_MSEC(duration), K_NO_WAIT);
   }
+#endif
 }
 
 void noTone(pin_size_t pinNumber) {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   k_timer_stop(&arduino_pin_timers[pinNumber]);
   gpio_pin_set_dt(&arduino_pins[pinNumber], 0);
+#endif
 }
 
 void delay(unsigned long ms) { k_sleep(K_MSEC(ms)); }
@@ -349,6 +375,7 @@ int analogRead(pin_size_t pinNumber)
 
 void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinStatus)
 {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   struct gpio_port_callback *pcb;
   gpio_flags_t intmode = 0;
 
@@ -380,6 +407,7 @@ void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinSt
   gpio_pin_interrupt_configure(arduino_pins[pinNumber].port, arduino_pins[pinNumber].pin, intmode);
   gpio_init_callback(&pcb->callback, handleGpioCallback, pcb->pins);
   gpio_add_callback(arduino_pins[pinNumber].port, &pcb->callback);
+#endif
 }
 
 void detachInterrupt(pin_size_t pinNumber)
@@ -409,6 +437,7 @@ long random(long max) {
 #ifdef CONFIG_GPIO_GET_DIRECTION
 
 unsigned long pulseIn(pin_size_t pinNumber, uint8_t state, unsigned long timeout) {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
   struct k_timer timer;
   int64_t start, end, delta = 0;
   const struct gpio_dt_spec *spec = &arduino_pins[pinNumber];
@@ -446,6 +475,9 @@ unsigned long pulseIn(pin_size_t pinNumber, uint8_t state, unsigned long timeout
 cleanup:
   k_timer_stop(&timer);
   return (unsigned long)delta;
+#else
+  return 0;
+#endif
 }
 
 #endif // CONFIG_GPIO_GET_DIRECTION

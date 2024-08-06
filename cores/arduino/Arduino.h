@@ -20,6 +20,7 @@
 		 ? 1                                                                               \
 		 : 0)
 
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
 /* Check all pins are defined only once */
 #define DIGITAL_PIN_CHECK_UNIQUE(i, _)                                                             \
 	((DT_FOREACH_PROP_ELEM_SEP_VARGS(                                                          \
@@ -29,6 +30,7 @@
 
 #if !LISTIFY(DT_PROP_LEN(DT_PATH(zephyr_user), digital_pin_gpios), DIGITAL_PIN_CHECK_UNIQUE, (&&))
 #error "digital_pin_gpios has duplicate definition"
+#endif
 #endif
 
 #undef DIGITAL_PIN_CHECK_UNIQUE
@@ -62,6 +64,7 @@
 /* If digital-pin-gpios is not defined, tries to use the led0 alias */
 #elif DT_NODE_EXISTS(DT_ALIAS(led0))
 
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
 #if !(DT_FOREACH_PROP_ELEM_SEP_VARGS(DT_PATH(zephyr_user), digital_pin_gpios, DIGITAL_PIN_EXISTS,   \
 				    (+), DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_ALIAS(led0), gpios, 0)), \
 				    DT_PHA_BY_IDX(DT_ALIAS(led0), gpios, 0, pin)) > 0)
@@ -70,6 +73,7 @@
 #define LED_BUILTIN                                                                                \
 	DIGITAL_PIN_GPIOS_FIND_PIN(DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_ALIAS(led0), gpios, 0)),     \
 				     DT_PHA_BY_IDX(DT_ALIAS(led0), gpios, 0, pin))
+#endif
 #endif
 
 #endif // builtin_led_gpios
@@ -83,7 +87,9 @@
  * enum digitalPins { D0, D1, ... LED... NUM_OF_DIGITAL_PINS };
  */
 enum digitalPins {
+#if DT_NODE_EXISTS(DT_PATH(zephyr_user, digital_pin_gpios))
 	DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios, DN_ENUMS, (, )),
+#endif
 	NUM_OF_DIGITAL_PINS
 };
 
