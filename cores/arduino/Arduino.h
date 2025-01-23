@@ -12,6 +12,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/i2c.h>
 
 #if DT_PROP_LEN(DT_PATH(zephyr_user), digital_pin_gpios) > 0
@@ -105,10 +106,30 @@ enum analogPins {
 
 #endif
 
+#ifdef CONFIG_DAC
+
+#undef DAC0
+#undef DAC1
+#undef DAC2
+#undef DAC3
+#define DAC_ENUMS(n, p, i) DAC##i = i,
+
+enum dacPins {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), dac_channels)
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), dac_channels, DAC_ENUMS)
+#endif
+	NUM_OF_DACS
+};
+
+#endif
+
 void interrupts(void);
 void noInterrupts(void);
 
 int digitalPinToInterrupt(pin_size_t pin);
+
+void analogReadResolution(int bits);
+void analogWriteResolution(int bits);
 
 #include <variant.h>
 
@@ -118,4 +139,5 @@ int digitalPinToInterrupt(pin_size_t pin);
 
 #ifdef __cplusplus
 #include <zephyrSerial.h>
+#include <overloads.h>
 #endif // __cplusplus
