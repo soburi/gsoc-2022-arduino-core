@@ -191,7 +191,10 @@ static const struct device *const dac_dev = DEVICE_DT_GET(DAC_NODE);
 	},
 
 static const struct dac_channel_cfg dac_ch_cfg[] = {
-	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), dac_channels, DAC_CHANNEL_DEFINE)};
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), dac_channels)
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), dac_channels, DAC_CHANNEL_DEFINE)
+#endif
+};
 
 #endif
 
@@ -402,7 +405,11 @@ void analogWrite(pin_size_t pinNumber, int value) {
 		return;
 	}
 
-	if (value < 0) {
+	value = map(value, 0, 1 << _analog_write_resolution, 0, arduino_pwm[idx].period);
+
+	if (((uint32_t)value) > arduino_pwm[idx].period) {
+		value = arduino_pwm[idx].period;
+	} else if (value < 0) {
 		value = 0;
 	} else if (value > maxInput) {
 		value = maxInput;
@@ -423,7 +430,8 @@ void analogWrite(pin_size_t pinNumber, int value) {
 static bool dac_channel_initialized[NUM_OF_DACS];
 
 void analogWrite(enum dacPins dacName, int value) {
-	int ret;
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), dac_channels)
+	int ret = 0;
 
 	if (dacName >= NUM_OF_DACS) {
 		return;
@@ -458,9 +466,7 @@ void analogWrite(enum dacPins dacName, int value) {
 								  static_cast<long>(maxInput),
 								  0L,
 								  static_cast<long>(max_dac_value))));
-	if (ret != 0) {
-		return;
-	}
+#endif
 }
 #endif
 

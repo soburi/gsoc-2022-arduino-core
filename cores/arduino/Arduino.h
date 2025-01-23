@@ -124,11 +124,8 @@ enum dacPins {
 	NUM_OF_DACS
 };
 
-#if !DT_NODE_HAS_PROP(DT_PATH(zephyr_user), dac_channels)
-#error "CONFIG_DAC is enabled, but zephyr_user node lacks dac_channels; disable CONFIG_DAC or define dac_channels"
 #endif
 
-#endif
 void interrupts(void);
 void noInterrupts(void);
 
