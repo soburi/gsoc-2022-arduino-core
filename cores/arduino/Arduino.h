@@ -94,6 +94,9 @@ enum analogPins {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, AN_ENUMS)
 };
 
+// We provide analogReadResolution APIs
+void analogReadResolution(int bits);
+
 #endif
 
 #ifdef CONFIG_DAC
@@ -117,8 +120,9 @@ void noInterrupts(void);
 
 int digitalPinToInterrupt(pin_size_t pin);
 
-void analogReadResolution(int bits);
+#if defined(CONFIG_DAC) || defined(CONFIG_PWM)
 void analogWriteResolution(int bits);
+#endif
 
 #include <variant.h>
 
