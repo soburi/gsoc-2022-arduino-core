@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Dhruva Gole
+ * Copyright (c) 2026 TOKITA Hiroshi
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +10,24 @@
 
 #include <zephyr/spinlock.h>
 
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
 static constexpr struct gpio_dt_spec arduino_pins[] = {DT_FOREACH_PROP_ELEM_SEP(
 	DT_PATH(zephyr_user), digital_pin_gpios, GPIO_DT_SPEC_GET_BY_IDX, (, ))};
+#else
+#define GET_GPIO_DEVICES(node_id)                                                                  \
+        COND_CODE_1(DT_NODE_HAS_PROP(node_id, gpio_controller),                                    \
+	            (COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),                                 \
+				 (DEVICE_DT_GET(node_id),),                                        \
+				 (nullptr,))),                                                     \
+		    ())
+
+#define GET_GPIO_NGPIOS(node_id)                                                                   \
+        COND_CODE_1(DT_NODE_HAS_PROP(node_id, gpio_controller),                                    \
+	            (DT_PROP_OR(node_id, ngpios, 0),), ())
+
+static constexpr const struct device *gpio_ports[] = {DT_FOREACH_NODE(GET_GPIO_DEVICES)};
+static constexpr uint32_t gpio_ngpios[] = {DT_FOREACH_NODE(GET_GPIO_NGPIOS)};
+#endif
 
 namespace {
 
@@ -58,18 +75,87 @@ constexpr const size_t is_first_appearance(const size_t &idx, const size_t &at, 
                tail...);
 }
 
+#if !DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+constexpr inline const struct device *local_gpio_port(pin_size_t gpin);
+
+constexpr inline const struct device *local_gpio_port_r(pin_size_t pin,
+							const struct device *const *ctrl,
+							const uint32_t accum, const uint32_t *end,
+							size_t n) {
+  return (n == 0) ? nullptr :
+		    (pin < accum + end[0]) ?  ctrl[0] :
+  				  local_gpio_port_r(pin, ctrl + 1, accum + end[0], end + 1, n - 1);
+}
+
+constexpr inline size_t port_index_r(const struct device *target, const struct device *const *table,
+  								 pin_size_t idx, size_t n) {
+  return (n == 0) ? size_t(-1) :
+  	   (target == table[0]) ? idx : port_index_r(target, table + 1, idx + 1, n - 1);
+}
+
+constexpr inline pin_size_t port_idx(pin_size_t gpin) {
+  return port_index_r(local_gpio_port(gpin), gpio_ports, 0, ARRAY_SIZE(gpio_ports));
+}
+
+constexpr inline pin_size_t end_accum_r(const uint32_t accum, const uint32_t *end, size_t n) {
+  return (n == 0) ? accum : end_accum_r(accum + end[0], end + 1, n - 1);
+}
+
+constexpr inline pin_size_t end_accum(size_t n) {
+  return end_accum_r(0, gpio_ngpios, n);
+}
+
+constexpr inline pin_size_t global_gpio_pin_(size_t port_idx, pin_size_t lpin) {
+  return port_idx == size_t(-1) ? size_t(-1) : end_accum(port_idx) + lpin;
+}
+
+constexpr inline pin_size_t global_gpio_pin(const struct device *lport, pin_size_t lpin) {
+  return global_gpio_pin_(port_index_r(lport, gpio_ports, 0, ARRAY_SIZE(gpio_ports)), lpin);
+}
+#endif
+
 constexpr inline const struct device *local_gpio_port(pin_size_t gpin) {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
   return (gpin < ARRAY_SIZE(arduino_pins)) ? arduino_pins[gpin].port : nullptr;
+#else
+  return local_gpio_port_r(gpin, gpio_ports, 0, gpio_ngpios, ARRAY_SIZE(gpio_ports));
+#endif
+}
+
+constexpr pin_size_t invalid_pin_number = pin_size_t( -1);
+
+constexpr inline bool local_gpio_pin_is_valid(pin_size_t pin)
+{
+   return pin != invalid_pin_number;
 }
 
 constexpr inline pin_size_t local_gpio_pin(pin_size_t gpin) {
-  return (gpin < ARRAY_SIZE(arduino_pins)) ? arduino_pins[gpin].pin : pin_size_t(-1);
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+  return (gpin < ARRAY_SIZE(arduino_pins)) ? arduino_pins[gpin].pin : invalid_pin_number;
+#else
+  return port_idx(gpin) == invalid_pin_number ? invalid_pin_number : gpin - end_accum(port_idx(gpin));
+#endif
 }
 
 inline int global_gpio_pin_configure(pin_size_t pinNumber, int flags) {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+  if (pinNumber >= ARRAY_SIZE(arduino_pins)) {
+    return -1;
+  }
   return gpio_pin_configure_dt(&arduino_pins[pinNumber], flags);
+#else
+  const struct device *port = local_gpio_port(pinNumber);
+
+  if (port) {
+    return gpio_pin_configure(port, local_gpio_pin(pinNumber), flags);
+  } else {
+    return -1;
+  }
+#endif
 }
 
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+#if DT_PROP_LEN_OR(DT_PATH(zephyr_user), digital_pin_gpios, 0) > 0
 #define GET_DEVICE_VARGS(n, p, i, _) DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(n, p, i))
 #define FIRST_APPEARANCE(n, p, i)                                                                  \
   is_first_appearance(0, i, ((size_t)-1), DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(n, p, i)),       \
@@ -81,6 +167,14 @@ const int port_num =
 #define GPIO_NGPIOS(n, p, i) DT_PROP(DT_GPIO_CTLR_BY_IDX(n, p, i), ngpios)
 const int max_ngpios = max_in_list(
   0, DT_FOREACH_PROP_ELEM_SEP(DT_PATH(zephyr_user), digital_pin_gpios, GPIO_NGPIOS, (, )));
+#else
+const int port_num = 1;
+const int max_ngpios = 0;
+#endif
+#else
+const int port_num = ARRAY_SIZE(gpio_ports);
+const int max_ngpios = max_in_list(0, DT_FOREACH_NODE(GET_GPIO_NGPIOS) 0);
+#endif
 
 /*
  * GPIO callback implementation
@@ -100,6 +194,10 @@ struct gpio_port_callback {
 
 struct gpio_port_callback *find_gpio_port_callback(const struct device *dev)
 {
+  if (dev == nullptr) {
+    return nullptr;
+  }
+
   for (size_t i = 0; i < ARRAY_SIZE(port_callback); i++) {
     if (port_callback[i].dev == dev) {
       return &port_callback[i];
@@ -115,10 +213,12 @@ struct gpio_port_callback *find_gpio_port_callback(const struct device *dev)
 
 void setInterruptHandler(pin_size_t pinNumber, voidFuncPtr func)
 {
-  struct gpio_port_callback *pcb = find_gpio_port_callback(local_gpio_port(pinNumber));
+  const struct device *port = local_gpio_port(pinNumber);
+  const pin_size_t pin = local_gpio_pin(pinNumber);
+  struct gpio_port_callback *pcb = find_gpio_port_callback(port);
 
-  if (pcb) {
-    pcb->handlers[local_gpio_pin(pinNumber)].handler = func;
+  if (pcb && local_gpio_pin_is_valid(pin)) {
+    pcb->handlers[pin].handler = func;
   }
 }
 
@@ -140,13 +240,42 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
 	DIGITAL_PIN_GPIOS_FIND_PIN( \
                 DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),        \
                 DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin)),
+#define PWM_PINS_GLOBAL(n, p, i) \
+	ZARD_GLOBAL_GPIO_OFFSET(DT_PHANDLE_BY_IDX(n, p, i)) + DT_PHA_BY_IDX(n, p, i, pin),
+#define PWM_CONN_CHANNEL_DT(n, p, i)                                                               \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
+		    ({ .dev = DEVICE_DT_GET(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
+		       .channel = DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 0),                \
+		       .period = 255, },),                                                         \
+		    ())
+#define PWM_CONN_PINNUM(n, p, i)                                                                   \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
+	            (ZARD_CONNECTOR_PIN_NAME_D(DT_NODELABEL(ZARD_CONNECTOR),                       \
+			                       DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 0)),), \
+		    ())
 
-const struct pwm_dt_spec arduino_pwm[] =
-	{ DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwms, PWM_DT_SPEC) };
+const struct pwm_dt_spec arduino_pwm[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwms)
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwms, PWM_DT_SPEC)
+#elif defined(ZARD_PWM_CONNECTOR)
+	DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_CHANNEL_DT)
+#endif
+};
 
 /* pwm-pins node provides a mapping digital pin numbers to pwm channels */
-const pin_size_t arduino_pwm_pins[] =
-	{ DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwm_pin_gpios, PWM_PINS) };
+const pin_size_t arduino_pwm_pins[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwm_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwm_pin_gpios, PWM_PINS)
+#else
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwm_pin_gpios, PWM_PINS_GLOBAL)
+#endif
+#elif defined(ZARD_PWM_CONNECTOR)
+  DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_PINNUM)
+#endif
+};
+
+BUILD_ASSERT(ARRAY_SIZE(arduino_pwm) == ARRAY_SIZE(arduino_pwm_pins));
 
 size_t pwm_pin_index(pin_size_t pinNumber) {
   for(size_t i=0; i<ARRAY_SIZE(arduino_pwm_pins); i++) {
@@ -166,17 +295,55 @@ size_t pwm_pin_index(pin_size_t pinNumber) {
 	DIGITAL_PIN_GPIOS_FIND_PIN( \
                 DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),        \
                 DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin)),
+#define ADC_PINS_GLOBAL(n, p, i) \
+	ZARD_GLOBAL_GPIO_OFFSET(DT_PHANDLE_BY_IDX(n, p, i)) + DT_PHA_BY_IDX(n, p, i, pin),
 #define ADC_CH_CFG(n,p,i) arduino_adc[i].channel_cfg,
+#define ADC_CONN_CHANNEL_CFG(n, p, i)                                                              \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
+	            (ADC_CHANNEL_CFG_DT(ADC_CHANNEL_DT_NODE(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i),   \
+					DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 0))),),      \
+		    ())
+#define ADC_CONN_CHANNEL_DT(n, p, i)                                                               \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
+	            (ADC_DT_SPEC_STRUCT(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i),                       \
+					DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(n, p, i, 0)),),       \
+		    ())
+#define ADC_CONN_PINNUM(n, p, i)                                                                   \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
+	            (ZARD_CONNECTOR_PIN_NAME_A(DT_NODELABEL(ZARD_CONNECTOR),                       \
+			                       DT_MAP_ENTRY_CHILD_SPECIFIER_BY_IDX(n, p, i, 0)),), \
+		    ())
 
-const struct adc_dt_spec arduino_adc[] =
-  { DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_DT_SPEC) };
+const struct adc_dt_spec arduino_adc[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_DT_SPEC)
+#elif defined(ZARD_ADC_CONNECTOR)
+  DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_DT)
+#endif
+};
 
-/* io-channel-pins node provides a mapping digital pin numbers to adc channels */
-const pin_size_t arduino_analog_pins[] =
-  { DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, ADC_PINS) };
+/* adc-pin-gpios provides a mapping digital pin numbers to adc channels */
+const pin_size_t arduino_analog_pins[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, ADC_PINS)
+#else
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, ADC_PINS_GLOBAL)
+#endif
+#elif defined(ZARD_ADC_CONNECTOR)
+  DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_PINNUM)
+#endif
+};
 
-struct adc_channel_cfg channel_cfg[ARRAY_SIZE(arduino_analog_pins)] =
-  { DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_CH_CFG) };
+struct adc_channel_cfg channel_cfg[ARRAY_SIZE(arduino_analog_pins)] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_CH_CFG)
+#elif defined(ZARD_ADC_CONNECTOR)
+  DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_CFG)
+#endif
+};
+
+BUILD_ASSERT(ARRAY_SIZE(arduino_adc) == ARRAY_SIZE(arduino_analog_pins));
 
 size_t analog_pin_index(pin_size_t pinNumber) {
   for(size_t i=0; i<ARRAY_SIZE(arduino_analog_pins); i++) {
@@ -237,7 +404,13 @@ PinStatus digitalRead(pin_size_t pinNumber) {
 }
 
 #if CONFIG_ARDUINO_MAX_TONES < 0
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
 #define MAX_TONE_PINS DT_PROP_LEN(DT_PATH(zephyr_user), digital_pin_gpios)
+#elif defined(ZARD_CONNECTOR)
+#define MAX_TONE_PINS DT_PROP_LEN(DT_NODELABEL(ZARD_CONNECTOR), gpio_map)
+#else
+#define MAX_TONE_PINS 1
+#endif
 #else
 #define MAX_TONE_PINS CONFIG_ARDUINO_MAX_TONES
 #endif
@@ -247,7 +420,7 @@ PinStatus digitalRead(pin_size_t pinNumber) {
 static struct pin_timer {
   struct k_timer timer;
   uint32_t count{0};
-  pin_size_t pin{pin_size_t(-1)};
+  pin_size_t pin{invalid_pin_number};
   bool infinity{false};
   struct k_spinlock lock;
 } arduino_pin_timers[MAX_TONE_PINS];
@@ -271,7 +444,7 @@ static struct pin_timer* find_pin_timer(pin_size_t pinNumber, bool active_only) 
   for (size_t i = 0; i < ARRAY_SIZE(arduino_pin_timers); i++) {
     k_spinlock_key_t key = k_spin_lock(&arduino_pin_timers[i].lock);
 
-    if (arduino_pin_timers[i].pin == pin_size_t(-1)) {
+    if (arduino_pin_timers[i].pin == invalid_pin_number) {
       arduino_pin_timers[i].pin = pinNumber;
       k_spin_unlock(&arduino_pin_timers[i].lock, key);
       return &arduino_pin_timers[i];
@@ -295,7 +468,7 @@ void tone_expiry_cb(struct k_timer *timer) {
     }
 
     k_timer_stop(timer);
-    pt->pin = pin_size_t(-1);
+    pt->pin = invalid_pin_number;
   } else {
     if (port) {
       gpio_pin_toggle(port, local_gpio_pin(pt->pin));
@@ -320,14 +493,14 @@ void tone(pin_size_t pinNumber, unsigned int frequency,
     return;
   }
 
-  port = local_gpio_port(pt->pin);
+  port = local_gpio_port(pinNumber);
 
   pinMode(pinNumber, OUTPUT);
   k_timer_stop(&pt->timer);
 
   if (frequency == 0) {
     key = k_spin_lock(&pt->lock);
-    pt->pin = pin_size_t(-1);
+    pt->pin = invalid_pin_number;
     k_spin_unlock(&pt->lock, key);
 
     if (port) {
@@ -370,7 +543,7 @@ void noTone(pin_size_t pinNumber) {
 
   key = k_spin_lock(&pt->lock);
   k_timer_stop(&pt->timer);
-  pt->pin = pin_size_t(-1);
+  pt->pin = invalid_pin_number;
   k_spin_unlock(&pt->lock, key);
 
   if (port) {
@@ -478,6 +651,7 @@ int analogRead(pin_size_t pinNumber)
 void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinStatus)
 {
   const struct device *port = local_gpio_port(pinNumber);
+  const pin_size_t pin = local_gpio_pin(pinNumber);
   struct gpio_port_callback *pcb;
   gpio_flags_t intmode = 0;
 
@@ -499,18 +673,20 @@ void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinSt
     return;
   }
 
+  if (port == nullptr || pin == pin_size_t(-1)) {
+    return;
+  }
+
   pcb = find_gpio_port_callback(port);
   __ASSERT(pcb != nullptr, "gpio_port_callback not found");
 
-  pcb->pins |= BIT(local_gpio_pin(pinNumber));
+  pcb->pins |= BIT(pin);
   setInterruptHandler(pinNumber, callback);
   enableInterrupt(pinNumber);
 
-  if (port) {
-    gpio_pin_interrupt_configure(port, local_gpio_pin(pinNumber), intmode);
-    gpio_init_callback(&pcb->callback, handleGpioCallback, pcb->pins);
-    gpio_add_callback(port, &pcb->callback);
-  }
+  gpio_pin_interrupt_configure(port, pin, intmode);
+  gpio_init_callback(&pcb->callback, handleGpioCallback, pcb->pins);
+  gpio_add_callback(port, &pcb->callback);
 }
 
 void detachInterrupt(pin_size_t pinNumber)
@@ -539,11 +715,11 @@ long random(long max) {
 
 unsigned long pulseIn(pin_size_t pinNumber, uint8_t state, unsigned long timeout) {
   const struct device *port = local_gpio_port(pinNumber);
-  const size_t pin = local_gpio_pin(pinNumber);
+  const pin_size_t pin = local_gpio_pin(pinNumber);
   struct k_timer timer;
   int64_t start, end, delta = 0;
 
-  if (!device_is_ready(port)) {
+  if (port == nullptr || pin == pin_size_t(-1) || !device_is_ready(port)) {
     return 0;
   }
 
@@ -575,18 +751,20 @@ cleanup:
 }
 
 void enableInterrupt(pin_size_t pinNumber) {
+  const pin_size_t pin = local_gpio_pin(pinNumber);
   struct gpio_port_callback *pcb = find_gpio_port_callback(local_gpio_port(pinNumber));
 
-  if (pcb) {
-    pcb->handlers[local_gpio_pin(pinNumber)].enabled = true;
+  if (pcb && local_gpio_pin_is_valid(pin)) {
+    pcb->handlers[pin].enabled = true;
   }
 }
 
 void disableInterrupt(pin_size_t pinNumber) {
+  const pin_size_t pin = local_gpio_pin(pinNumber);
   struct gpio_port_callback *pcb = find_gpio_port_callback(local_gpio_port(pinNumber));
 
-  if (pcb) {
-    pcb->handlers[local_gpio_pin(pinNumber)].enabled = false;
+  if (pcb && local_gpio_pin_is_valid(pin)) {
+    pcb->handlers[pin].enabled = false;
   }
 }
 
