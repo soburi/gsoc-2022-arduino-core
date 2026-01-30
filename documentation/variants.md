@@ -146,6 +146,10 @@ to define `LED_BUILTIN`.
 The `LED_BUILTIN` does not define here if it has not found both nodes or
 defined `LED_BUILTIN` already.
 
+When `/zephyr,user/digital-pin-gpios` is absent, the `led0` alias sets
+`LED_BUILTIN` to the **global GPIO number**, which matches the numeric pin
+interpretation in that mode.
+
 For example, in the case of the 13th digital pins connected to the onboard LED,
 define `builtin-led-gpios` as follows.
 
