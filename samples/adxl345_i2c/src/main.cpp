@@ -1,33 +1,29 @@
 #include <Wire.h>
 
-static const uint8_t ADXL_ADDR = 0x53; // SDO/ALT LOW:0x53, HIGH:0x1D
-static const uint8_t REG_DEVID      = 0x00;
-static const uint8_t REG_BW_RATE    = 0x2C;
-static const uint8_t REG_POWER_CTL  = 0x2D;
-static const uint8_t REG_DATA_FORMAT= 0x31;
-static const uint8_t REG_DATAX0     = 0x32;
+static const uint8_t QMC_ADDR = 0x0D;
+
+// レジスタ
+static const uint8_t REG_X_LSB   = 0x00; // 0x00..0x05: X/Y/Z (LSB,MSB) :contentReference[oaicite:3]{index=3}
+static const uint8_t REG_STATUS  = 0x06; // DRDYなど :contentReference[oaicite:4]{index=4}
+static const uint8_t REG_CTRL1   = 0x09; // OSR/RNG/ODR/MODE :contentReference[oaicite:5]{index=5}
+static const uint8_t REG_CTRL2   = 0x0A; // SOFT_RSTなど :contentReference[oaicite:6]{index=6}
+static const uint8_t REG_PERIOD  = 0x0B; // Set/Reset period :contentReference[oaicite:7]{index=7}
 
 static void writeReg(uint8_t reg, uint8_t val) {
-  Wire.beginTransmission(ADXL_ADDR);
+  Wire.beginTransmission(QMC_ADDR);
   Wire.write(reg);
   Wire.write(val);
   Wire.endTransmission();
 }
 
-static uint8_t readReg(uint8_t reg) {
-  Wire.beginTransmission(ADXL_ADDR);
+static void readBytes(uint8_t reg, uint8_t* buf, uint8_t len) {
+  Wire.beginTransmission(QMC_ADDR);
   Wire.write(reg);
-  Wire.endTransmission(false);           // repeated start
-  Wire.requestFrom(ADXL_ADDR, (uint8_t)1);
-  return Wire.available() ? Wire.read() : 0xFF;
-}
-
-static void readMulti(uint8_t reg, uint8_t *buf, size_t len) {
-  Wire.beginTransmission(ADXL_ADDR);
-  Wire.write(reg);
-  Wire.endTransmission(false);           // repeated start
-  Wire.requestFrom(ADXL_ADDR, (uint8_t)len);
-  for (size_t i = 0; i < len && Wire.available(); i++) buf[i] = Wire.read();
+  Wire.endTransmission(false); // repeated start
+  Wire.requestFrom(QMC_ADDR, len);
+  for (uint8_t i = 0; i < len && Wire.available(); i++) {
+    buf[i] = Wire.read();
+  }
 }
 
 void setup() {
@@ -35,21 +31,28 @@ void setup() {
   Wire.begin();
   Wire.setClock(400000);
 
-  uint8_t id = readReg(REG_DEVID);
-  Serial.print("DEVID=0x"); Serial.println(id, HEX);
-  if (id != 0xE5) {
-    Serial.println("ADXL345 not found (check wiring/address).");
-    while (1) delay(1000);
-  }
+  // (任意) ソフトリセットしたいなら：
+  // writeReg(REG_CTRL2, 0x80); delay(10);  // SOFT_RST(bit7) :contentReference[oaicite:8]{index=8}
 
-  writeReg(REG_BW_RATE, 0x0A);         // 100 Hz
-  writeReg(REG_DATA_FORMAT, 0x08);     // FULL_RES=1, range=+-2g
-  writeReg(REG_POWER_CTL, 0x08);       // MEASURE=1
+  // 推奨: Set/Reset period = 0x01 :contentReference[oaicite:9]{index=9}
+  writeReg(REG_PERIOD, 0x01);
+
+  // CTRL1 = 0x1D:
+  // OSR=512(00), RNG=8G(01), ODR=200Hz(11), MODE=Continuous(01) :contentReference[oaicite:10]{index=10}
+  writeReg(REG_CTRL1, 0x1D);
 }
 
 void loop() {
+  // DRDYを見たい場合（必須ではない）：bit0がDRDY :contentReference[oaicite:11]{index=11}
+  uint8_t st = 0x00;
+  readBytes(REG_STATUS, &st, 1);
+  if ((st & 0x01) == 0) { // DRDY=0
+    delay(5);
+    return;
+  }
+
   uint8_t b[6] = {0};
-  readMulti(REG_DATAX0, b, 6);
+  readBytes(REG_X_LSB, b, 6);
 
   int16_t x = (int16_t)((b[1] << 8) | b[0]);
   int16_t y = (int16_t)((b[3] << 8) | b[2]);
