@@ -187,6 +187,7 @@ B. Board devicetree constructs (board-provided defaults)
 - **Meaning:** Board default built-in LED (Zephyr convention).
 - **Affects:** Used to derive `LED_BUILTIN` if neither `variant.h` `LED_BUILTIN` nor `/zephyr,user/builtin-led-gpios` is provided.
 - **Precedence:** lowest in the built-in LED chain.
+- **Notes:** If `/zephyr,user/digital-pin-gpios` is absent, the derived `LED_BUILTIN` uses the **global GPIO number** (matching numeric pin interpretation in that mode).
 
 
 ## C. `variant.h` symbols (highest-precedence C/C++ overrides)

@@ -135,7 +135,7 @@
 		DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(DT_NODELABEL(ZARD_CONNECTOR), gpio_map, i, 0)
 
 #if DT_NODE_EXISTS(DT_ALIAS(led0))
-#define LED_BUILTIN_                                                                               \
+#define ZARD_LED_BUILTIN                                                                           \
 	ZARD_GLOBAL_GPIO_NUM(DT_PHANDLE_BY_IDX(DT_ALIAS(led0), gpios, 0)) +                            \
 		DT_PHA_BY_IDX(DT_ALIAS(led0), gpios, 0, pin)
 #endif
