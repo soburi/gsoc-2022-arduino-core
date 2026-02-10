@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/adc/adc.h>
+
 &adc0 {
 	status = "okay";
 	#address-cells = <1>;
