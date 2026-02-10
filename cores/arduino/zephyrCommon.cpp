@@ -229,8 +229,8 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
 #define PWM_PINS(n, p, i) \
 	DIGITAL_PIN_GPIOS_FIND_PIN( \
-                DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),        \
-                DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin)),
+		DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),        \
+		DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin)),
 #else
 #define PWM_PINS(n, p, i) \
 	ZARD_GLOBAL_GPIO_NUM(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)) + DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin),
