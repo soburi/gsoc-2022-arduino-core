@@ -234,7 +234,7 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
 #else
 #define PWM_PINS(n, p, i) \
 	ZARD_GLOBAL_GPIO_NUM(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)) + \
-                DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin),
+	                DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin),
 #endif
 #define PWM_CONN_CHANNEL_DT(n, p, i)                                                               \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
@@ -286,7 +286,7 @@ size_t pwm_pin_index(pin_size_t pinNumber) {
 #else
 #define ADC_PINS(n, p, i) \
 	ZARD_GLOBAL_GPIO_NUM(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)) + \
-                DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin),
+	                DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin),
 #endif
 #define ADC_CH_CFG(n,p,i) arduino_adc[i].channel_cfg,
 #define ADC_CONN_CHANNEL_CFG(n, p, i)                                                              \
