@@ -242,8 +242,14 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
 		    ())
 
 const struct pwm_dt_spec arduino_pwm[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwm_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwms)
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwms, PWM_DT_SPEC)
+#endif
+#else // global pin rule
+	//TODO
+#endif
 #elif defined(ZARD_PWM_CONNECTOR)
 	DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_CHANNEL_DT)
 #endif
@@ -257,6 +263,8 @@ const pin_size_t arduino_pwm_pins[] = {
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_PINNUM)
 #endif
 };
+
+BUILD_ASSERT(ARRAY_SIZE(arduino_pwm) == ARRAY_SIZE(arduino_pwm_pins));
 
 size_t pwm_pin_index(pin_size_t pinNumber) {
   for(size_t i=0; i<ARRAY_SIZE(arduino_pwm_pins); i++) {
@@ -294,7 +302,13 @@ size_t pwm_pin_index(pin_size_t pinNumber) {
 
 const struct adc_dt_spec arduino_adc[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_DT_SPEC)
+#endif
+#else //global pin rule
+      //TODO
+#endif
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_DT)
 #endif
@@ -311,11 +325,19 @@ const pin_size_t arduino_analog_pins[] = {
 
 struct adc_channel_cfg channel_cfg[ARRAY_SIZE(arduino_analog_pins)] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_CH_CFG)
+#endif
+#else // global pin rule
+      // TODO
+#endif
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_CFG)
 #endif
 };
+
+BUILD_ASSERT(ARRAY_SIZE(arduino_adc) == ARRAY_SIZE(arduino_analog_pins));
 
 size_t analog_pin_index(pin_size_t pinNumber) {
   for(size_t i=0; i<ARRAY_SIZE(arduino_analog_pins); i++) {
