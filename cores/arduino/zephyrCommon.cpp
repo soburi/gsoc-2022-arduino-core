@@ -293,7 +293,7 @@ size_t pwm_pin_index(pin_size_t pinNumber) {
 		    ())
 
 const struct adc_dt_spec arduino_adc[] = {
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_DT_SPEC)
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_DT)
@@ -310,7 +310,7 @@ const pin_size_t arduino_analog_pins[] = {
 };
 
 struct adc_channel_cfg channel_cfg[ARRAY_SIZE(arduino_analog_pins)] = {
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_CH_CFG)
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_CFG)
