@@ -105,15 +105,15 @@ A. Devicetree node: `/zephyr,user`
 - **Type:** `io-channels` phandle-array specifiers
 - **Meaning:** Declares the ADC controller/channel specifiers used by ArduinoCore-Zephyr.
 - **Affects:** ADC channel provisioning (ADC availability).
-- **Precedence:** primary/required provisioning source for ADC behavior.
-- **Notes:** Without provisioning, ADC is considered unsupported regardless of pin association.
+- **Precedence:** higher than connector `io-channel-map` (if present).
+- **Notes:** If absent, ADC provisioning may be derived from connector `io-channel-map` (see below).
 
 #### `pwms`
 - **Type:** PWM phandle-array specifiers
 - **Meaning:** Declares PWM controller/channel specifiers used by ArduinoCore-Zephyr.
 - **Affects:** PWM channel provisioning (PWM availability).
-- **Precedence:** primary/required provisioning source for PWM behavior.
-- **Notes:** Without provisioning, PWM output is considered unsupported regardless of pin association.
+- **Precedence:** higher than connector `pwm-map` (if present).
+- **Notes:** If absent, PWM provisioning may be derived from connector `pwm-map` (see below).
 
 
 
@@ -130,23 +130,27 @@ B. Board devicetree constructs (board-provided defaults)
 
 ---
 
-### `io-channel-map` (connector ADC association)
+### `io-channel-map` (connector ADC association and provisioning)
 - **Location:** connector nexus node (board-defined)
 - **Type:** nexus mapping (`io-channel-map`, `io-channel-map-mask`, `io-channel-map-pass-thru`, …)
-- **Meaning:** Board-defined ADC pin association through connector mapping.
-- **Affects:** ADC association when `/zephyr,user/adc-pin-gpios` is absent.
-- **Precedence:** lower than `/zephyr,user/adc-pin-gpios`.
-- **Notes:** Association only; ADC provisioning still requires `/zephyr,user/io-channels`.
+- **Meaning:** Board-defined ADC pin association and provisioning through connector mapping.
+- **Affects:**
+  - ADC pin association when `/zephyr,user/adc-pin-gpios` is absent.
+  - ADC channel provisioning when `/zephyr,user/io-channels` is absent.
+- **Precedence:** lower than `/zephyr,user/adc-pin-gpios` (for association) and `/zephyr,user/io-channels` (for provisioning).
+- **Notes:** When `/zephyr,user/io-channels` is absent, ADC channels are provisioned directly from this connector map.
 
 ---
 
-### `pwm-map` (connector PWM association)
+### `pwm-map` (connector PWM association and provisioning)
 - **Location:** connector nexus node (board-defined)
 - **Type:** nexus mapping (`pwm-map`, `pwm-map-mask`, `pwm-map-pass-thru`, …)
-- **Meaning:** Board-defined PWM pin association through connector mapping.
-- **Affects:** PWM association when `/zephyr,user/pwm-pin-gpios` is absent.
-- **Precedence:** lower than `/zephyr,user/pwm-pin-gpios`.
-- **Notes:** Association only; PWM provisioning still requires `/zephyr,user/pwms`.
+- **Meaning:** Board-defined PWM pin association and provisioning through connector mapping.
+- **Affects:**
+  - PWM pin association when `/zephyr,user/pwm-pin-gpios` is absent.
+  - PWM channel provisioning when `/zephyr,user/pwms` is absent.
+- **Precedence:** lower than `/zephyr,user/pwm-pin-gpios` (for association) and `/zephyr,user/pwms` (for provisioning).
+- **Notes:** When `/zephyr,user/pwms` is absent, PWM channels are provisioned directly from this connector map.
 
 ---
 
