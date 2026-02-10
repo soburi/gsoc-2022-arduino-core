@@ -115,7 +115,7 @@ constexpr inline pin_size_t global_gpio_pin(const struct device *lport, pin_size
 
 constexpr inline const struct device *local_gpio_port(pin_size_t gpin) {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
-  return arduino_pins[gpin].port;
+  return (gpin < ARRAY_SIZE(arduino_pins)) ? arduino_pins[gpin].port : nullptr;
 #else
   return local_gpio_port_r(gpin, gpio_ports, 0, gpio_ngpios, ARRAY_SIZE(gpio_ports));
 #endif
@@ -123,7 +123,7 @@ constexpr inline const struct device *local_gpio_port(pin_size_t gpin) {
 
 constexpr inline pin_size_t local_gpio_pin(pin_size_t gpin) {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
-  return arduino_pins[gpin].pin;
+  return (gpin < ARRAY_SIZE(arduino_pins)) ? arduino_pins[gpin].pin : pin_size_t(-1);
 #else
   return port_idx(gpin) == pin_size_t(-1) ? pin_size_t(-1) : gpin - end_accum(port_idx(gpin));
 #endif
@@ -131,6 +131,9 @@ constexpr inline pin_size_t local_gpio_pin(pin_size_t gpin) {
 
 inline int global_gpio_pin_configure(pin_size_t pinNumber, int flags) {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
+  if (pinNumber >= ARRAY_SIZE(arduino_pins)) {
+    return -1;
+  }
   return gpio_pin_configure_dt(&arduino_pins[pinNumber], flags);
 #else
   const struct device *port = local_gpio_port(pinNumber);
