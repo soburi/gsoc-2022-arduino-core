@@ -62,6 +62,7 @@ A. Devicetree node: `/zephyr,user`
             pwm-pin-gpios = <&gpio0 3 0>,
                             /* - snip - */
                             <&gpio0 11 0>;
+        };
     };
     ```
 
@@ -187,6 +188,7 @@ B. Board devicetree constructs (board-provided defaults)
 - **Location:** board devicetree node label
 - **Type:** label pointing to a connector node (`gpio-map` container)
 - **Meaning:** Connector node that models the Arduino header pinout.
+- **Supported labels:** `arduino_header`, `arduino_mkr_header`, `arduino_nano_header`, `pico_header`, `boosterpack_header`
 - **Affects:** Defines `D0`, `D1`, … when `/zephyr,user/digital-pin-gpios` is absent.
 - **Precedence:** Used only if `/zephyr,user/digital-pin-gpios` is absent.
 - **Notes:** `gpio-map`: left = connector pin id, right = target GPIO.

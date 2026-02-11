@@ -101,7 +101,7 @@ The following example instantiates `Serial` and `Serial1` with `uart0` and `uart
 ```
 / {
        zephyr,user {
-               serials = <&uart0 &uart1>;
+               serials = <&uart0>, <&uart1>;
        };
 };
 ```
@@ -121,7 +121,7 @@ The following example instantiates `Wire` and `Wire1` with `i2c0` and `i2c1`.
 ```
 / {
        zephyr,user {
-               i2cs = <&i2c0 &i2c1>;
+               i2cs = <&i2c0>, <&i2c1>;
        };
 };
 ```
