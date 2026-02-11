@@ -484,7 +484,7 @@ void tone(pin_size_t pinNumber, unsigned int frequency,
     return;
   }
 
-  port = local_gpio_port(pt->pin);
+  port = local_gpio_port(pinNumber);
 
   pinMode(pinNumber, OUTPUT);
   k_timer_stop(&pt->timer);
@@ -663,6 +663,10 @@ void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinSt
     return;
   }
 
+  if (port == nullptr) {
+    return;
+  }
+
   pcb = find_gpio_port_callback(port);
   __ASSERT(pcb != nullptr, "gpio_port_callback not found");
 
@@ -707,7 +711,7 @@ unsigned long pulseIn(pin_size_t pinNumber, uint8_t state, unsigned long timeout
   struct k_timer timer;
   int64_t start, end, delta = 0;
 
-  if (!device_is_ready(port)) {
+  if (port == nullptr || !device_is_ready(port)) {
     return 0;
   }
 

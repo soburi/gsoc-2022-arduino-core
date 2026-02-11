@@ -62,6 +62,7 @@ A. Devicetree node: `/zephyr,user`
             pwm-pin-gpios = <&gpio0 3 0>,
                             /* - snip - */
                             <&gpio0 11 0>;
+        };
     };
     ```
 
