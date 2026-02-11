@@ -80,6 +80,7 @@
 #else
 
 #if DT_NODE_EXISTS(DT_NODELABEL(arduino_header))
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(arduino_header), arduino_header_r3)
 #define ZARD_CONNECTOR arduino_header
 
 #define ZARD_ARDUINO_HEADER_R3_PIN_NAME_A_0 A0
@@ -129,6 +130,9 @@
 #define ZARD_ARDUINO_HEADER_R3_IS_DIGITAL_20 1
 #define ZARD_ARDUINO_HEADER_R3_IS_DIGITAL_21 1
 
+#else
+#error "Only arduino-header-r3 connector is supported"
+#endif
 #endif
 
 #if DT_NODE_EXISTS(DT_NODELABEL(arduino_adc))
