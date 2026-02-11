@@ -215,7 +215,8 @@ B. Board devicetree constructs (board-provided defaults)
 - **Precedence:**
   - Lower than `/zephyr,user/adc-pin-gpios` (association)
   - Lower than `/zephyr,user/io-channels` (provisioning)
-- **Notes:** `io-channel-map`: left = connector pin id, right = target ADC controller/channel; ADC still needs per-channel config under the ADC device node.
+- **Notes:**
+  - `io-channel-map`: left = connector pin id, right = target ADC controller/channel.
   - ADC still requires per-channel configuration under the ADC device node,
     regardless of how the channel list is obtained.
 - **Example:**
@@ -353,7 +354,7 @@ B. Board devicetree constructs (board-provided defaults)
       For example, if you have gpio0, gpio1 which has 16 ports,
       then pin0 of gpio0 will be 0, pin1 will be 1, ...
       pin0 of gpio1 will be 16, pin1 will be 17, ... etc.
-    - The numbers will be counted even if the gpio device is disabled.
+    - Only GPIO controllers with `status = "okay"` are counted.
     - The order of GPIOs depends on their appearance in the device tree.
 
 ### Dx availability (`D0`, `D1`, …)
