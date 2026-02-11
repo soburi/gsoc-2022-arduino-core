@@ -36,21 +36,26 @@
 
 #undef DIGITAL_PIN_CHECK_UNIQUE
 
-/* Return the index of it if matched, oterwise return 0 */
+/* Return (index + 1) if matched, otherwise return 0 */
 #define LED_BUILTIN_INDEX_BY_REG_AND_PINNUM(n, p, i, dev, num)                                     \
-	(DIGITAL_PIN_EXISTS(n, p, i, dev, num) ? i : 0)
+	(DIGITAL_PIN_EXISTS(n, p, i, dev, num) ? (i + 1) : 0)
 
-/* Only matched pin returns non-zero value, so the sum is matched pin's index */
-#define DIGITAL_PIN_GPIOS_FIND_PIN(dev, pin)                                                     \
+/*
+ * Return (index + 1) of a matched pin, otherwise 0.
+ * This allows the caller to distinguish an unmatched pin from D0 (index 0).
+ */
+#define DIGITAL_PIN_GPIOS_FIND_PIN_MATCH(dev, pin)                                               \
 	DT_FOREACH_PROP_ELEM_SEP_VARGS(DT_PATH(zephyr_user), digital_pin_gpios,                    \
 				       LED_BUILTIN_INDEX_BY_REG_AND_PINNUM, (+), dev, pin)
+
+/* Convert match value to zero-based pin index. */
+#define DIGITAL_PIN_GPIOS_FIND_PIN(dev, pin) (DIGITAL_PIN_GPIOS_FIND_PIN_MATCH(dev, pin) - 1)
 
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), builtin_led_gpios) &&                                   \
 	(DT_PROP_LEN(DT_PATH(zephyr_user), builtin_led_gpios) > 0)
 
-#if !(DT_FOREACH_PROP_ELEM_SEP_VARGS(                                                               \
-	     DT_PATH(zephyr_user), digital_pin_gpios, DIGITAL_PIN_EXISTS, (+),                     \
-	     DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), builtin_led_gpios, 0)),           \
+#if !(DIGITAL_PIN_GPIOS_FIND_PIN_MATCH(                                                                \
+	     DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), builtin_led_gpios, 0)),            \
 	     DT_PHA_BY_IDX(DT_PATH(zephyr_user), builtin_led_gpios, 0, pin)) > 0)
 #warning "pin not found in digital_pin_gpios"
 #else
@@ -63,8 +68,8 @@
 /* If digital-pin-gpios is not defined, tries to use the led0 alias */
 #elif DT_NODE_EXISTS(DT_ALIAS(led0))
 
-#if !(DT_FOREACH_PROP_ELEM_SEP_VARGS(DT_PATH(zephyr_user), digital_pin_gpios, DIGITAL_PIN_EXISTS,   \
-				    (+), DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_ALIAS(led0), gpios, 0)), \
+#if !(DIGITAL_PIN_GPIOS_FIND_PIN_MATCH(                                                               \
+				    DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_ALIAS(led0), gpios, 0)),                      \
 				    DT_PHA_BY_IDX(DT_ALIAS(led0), gpios, 0, pin)) > 0)
 #warning "pin not found in digital_pin_gpios"
 #else
