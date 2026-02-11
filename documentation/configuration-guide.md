@@ -204,9 +204,9 @@ To correctly configure PWM and ADC, two independent items must be addressed:
 
 This is similar to configuring GPIO:
 
-1) **Derive from nexus connector maps**
+1) **Derive from connector maps**
 
-   Provide connector mappings via the board’s nexus definitions (e.g., `pwm-map` and `io-channel-map`)
+   Provide connector mappings via the board’s connector definitions (e.g., `pwm-map` and `io-channel-map`)
 
     ```dts
     / {
@@ -232,7 +232,7 @@ This is similar to configuring GPIO:
 
 2) **Explicit lists under `/zephyr,user`**
 
-   Set GPIO Pin lists in `/zephyr,user/pwm-pin-gpios` and `/zephyr,user/adc-pin-gpios`,
+   Set GPIO pin lists in `/zephyr,user/pwm-pin-gpios` and `/zephyr,user/adc-pin-gpios`.
 
     ```dts
     / {
@@ -254,7 +254,7 @@ This is similar to configuring GPIO:
 ArduinoCore-Zephyr needs a list of available PWM/ADC channels.
 You can provide it in either of the following ways (**lowest precedence rule first**):
 
-1) **Derive from nexus connector maps**
+1) **Derive from connector maps**
 
    If the board defines `arduino_pwm` with `pwm-map` and/or `arduino_adc` with `io-channel-map`,
    ArduinoCore-Zephyr can derive the channel lists from those maps.
@@ -263,7 +263,7 @@ You can provide it in either of the following ways (**lowest precedence rule fir
 
 2) **Explicit lists under `/zephyr,user`**
 
-   Sets the PWM/ADC channels corresponding to the pins specified by `pwm-pin-gpios` and `adc-pin-gpios`.
+   Set the PWM/ADC channels corresponding to the pins specified by `pwm-pin-gpios` and `adc-pin-gpios`.
    - PWM channels: `/zephyr,user/pwms`
    - ADC channels: `/zephyr,user/io-channels`
 

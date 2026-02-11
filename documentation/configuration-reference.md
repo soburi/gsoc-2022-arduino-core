@@ -132,7 +132,7 @@ A. Devicetree node: `/zephyr,user`
     ```
 
 
-### Port provisioning
+### Channel provisioning
 
 #### `io-channels`
 - **Location:** `/zephyr,user`
@@ -216,9 +216,10 @@ B. Board devicetree constructs (board-provided defaults)
 - **Precedence:**
   - Lower than `/zephyr,user/adc-pin-gpios` (association)
   - Lower than `/zephyr,user/io-channels` (provisioning)
-- **Notes:** `io-channel-map`: left = connector pin id, right = target ADC controller/channel.
-  ADC still requires per-channel configuration under the ADC device node,
-  regardless of how the channel list is obtained.
+- **Notes:**
+  - `io-channel-map`: left = connector pin id, right = target ADC controller/channel.
+  - ADC still requires per-channel configuration under the ADC device node,
+    regardless of how the channel list is obtained.
 - **Example:**
     ```dts
     / {
@@ -377,4 +378,3 @@ B. Board devicetree constructs (board-provided defaults)
 ### PWM pin association source
 - **Primary:** `/zephyr,user/pwm-pin-gpios`
 - **Fallback:** connector `pwm-map` under `arduino_pwm`
-
