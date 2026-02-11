@@ -205,7 +205,7 @@ This is similar to configuring GPIO:
 
 1) **Derive from connector maps**
 
-   Provide connector mappings via the board’s nexus definitions (e.g., `pwm-map` and `io-channel-map`)
+   Provide connector mappings via the board’s connector definitions (e.g., `pwm-map` and `io-channel-map`)
 
     ```dts
     / {
