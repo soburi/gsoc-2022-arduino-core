@@ -164,7 +164,7 @@ Two ways to reach it (**lowest precedence rule first**):
 
    If the board provides node labels such as `arduino_serial`, `arduino_i2c`, and `arduino_spi`,
    they will be used as defaults for `Serial`, `Wire`, and `SPI`.
-   The exact label names may vary depending on the connector model used by the board.
+   Use the conventional labels `arduino_serial`, `arduino_i2c`, and `arduino_spi`.
 
     ```dts
     arduino_i2c: &iic1 {};

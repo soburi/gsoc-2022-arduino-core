@@ -206,10 +206,12 @@ struct gpio_port_callback *find_gpio_port_callback(const struct device *dev)
 
 void setInterruptHandler(pin_size_t pinNumber, voidFuncPtr func)
 {
-  struct gpio_port_callback *pcb = find_gpio_port_callback(local_gpio_port(pinNumber));
+  const struct device *port = local_gpio_port(pinNumber);
+  pin_size_t pin = local_gpio_pin(pinNumber);
+  struct gpio_port_callback *pcb = find_gpio_port_callback(port);
 
-  if (pcb) {
-    pcb->handlers[local_gpio_pin(pinNumber)].handler = func;
+  if (pcb && pin != pin_size_t(-1)) {
+    pcb->handlers[pin].handler = func;
   }
 }
 
@@ -642,6 +644,7 @@ int analogRead(pin_size_t pinNumber)
 void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinStatus)
 {
   const struct device *port = local_gpio_port(pinNumber);
+  pin_size_t pin = local_gpio_pin(pinNumber);
   struct gpio_port_callback *pcb;
   gpio_flags_t intmode = 0;
 
@@ -663,18 +666,20 @@ void attachInterrupt(pin_size_t pinNumber, voidFuncPtr callback, PinStatus pinSt
     return;
   }
 
+  if (port == nullptr || pin == pin_size_t(-1)) {
+    return;
+  }
+
   pcb = find_gpio_port_callback(port);
   __ASSERT(pcb != nullptr, "gpio_port_callback not found");
 
-  pcb->pins |= BIT(local_gpio_pin(pinNumber));
+  pcb->pins |= BIT(pin);
   setInterruptHandler(pinNumber, callback);
   enableInterrupt(pinNumber);
 
-  if (port) {
-    gpio_pin_interrupt_configure(port, local_gpio_pin(pinNumber), intmode);
-    gpio_init_callback(&pcb->callback, handleGpioCallback, pcb->pins);
-    gpio_add_callback(port, &pcb->callback);
-  }
+  gpio_pin_interrupt_configure(port, pin, intmode);
+  gpio_init_callback(&pcb->callback, handleGpioCallback, pcb->pins);
+  gpio_add_callback(port, &pcb->callback);
 }
 
 void detachInterrupt(pin_size_t pinNumber)
@@ -703,11 +708,11 @@ long random(long max) {
 
 unsigned long pulseIn(pin_size_t pinNumber, uint8_t state, unsigned long timeout) {
   const struct device *port = local_gpio_port(pinNumber);
-  const size_t pin = local_gpio_pin(pinNumber);
+  pin_size_t pin = local_gpio_pin(pinNumber);
   struct k_timer timer;
   int64_t start, end, delta = 0;
 
-  if (!device_is_ready(port)) {
+  if (port == nullptr || pin == pin_size_t(-1) || !device_is_ready(port)) {
     return 0;
   }
 
@@ -739,18 +744,20 @@ cleanup:
 }
 
 void enableInterrupt(pin_size_t pinNumber) {
+  pin_size_t pin = local_gpio_pin(pinNumber);
   struct gpio_port_callback *pcb = find_gpio_port_callback(local_gpio_port(pinNumber));
 
-  if (pcb) {
-    pcb->handlers[local_gpio_pin(pinNumber)].enabled = true;
+  if (pcb && pin != pin_size_t(-1)) {
+    pcb->handlers[pin].enabled = true;
   }
 }
 
 void disableInterrupt(pin_size_t pinNumber) {
+  pin_size_t pin = local_gpio_pin(pinNumber);
   struct gpio_port_callback *pcb = find_gpio_port_callback(local_gpio_port(pinNumber));
 
-  if (pcb) {
-    pcb->handlers[local_gpio_pin(pinNumber)].enabled = false;
+  if (pcb && pin != pin_size_t(-1)) {
+    pcb->handlers[pin].enabled = false;
   }
 }
 
