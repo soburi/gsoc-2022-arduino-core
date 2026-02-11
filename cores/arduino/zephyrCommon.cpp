@@ -242,14 +242,8 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
 		    ())
 
 const struct pwm_dt_spec arduino_pwm[] = {
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwm_pin_gpios)
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwms)
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwms, PWM_DT_SPEC)
-#endif
-#else // global pin rule
-	//TODO
-#endif
 #elif defined(ZARD_PWM_CONNECTOR)
 	DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_CHANNEL_DT)
 #endif
@@ -258,7 +252,11 @@ const struct pwm_dt_spec arduino_pwm[] = {
 /* pwm-pins node provides a mapping digital pin numbers to pwm channels */
 const pin_size_t arduino_pwm_pins[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), pwm_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwm_pin_gpios, PWM_PINS)
+#else // global pin rule
+	//TODO
+#endif
 #elif defined(ZARD_PWM_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_PINNUM)
 #endif
@@ -302,13 +300,7 @@ size_t pwm_pin_index(pin_size_t pinNumber) {
 
 const struct adc_dt_spec arduino_adc[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_DT_SPEC)
-#endif
-#else //global pin rule
-      //TODO
-#endif
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_DT)
 #endif
@@ -317,21 +309,19 @@ const struct adc_dt_spec arduino_adc[] = {
 /* io-channel-pins node provides a mapping digital pin numbers to adc channels */
 const pin_size_t arduino_analog_pins[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, ADC_PINS)
+#else // global pin rule
+      // TODO
+#endif
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_PINNUM)
 #endif
 };
 
 struct adc_channel_cfg channel_cfg[ARRAY_SIZE(arduino_analog_pins)] = {
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, ADC_CH_CFG)
-#endif
-#else // global pin rule
-      // TODO
-#endif
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_CHANNEL_CFG)
 #endif
