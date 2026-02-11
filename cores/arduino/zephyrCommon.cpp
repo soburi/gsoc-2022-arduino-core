@@ -230,6 +230,8 @@ void handleGpioCallback(const struct device *port, struct gpio_callback *cb, uin
 	DIGITAL_PIN_GPIOS_FIND_PIN( \
                 DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),        \
                 DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin)),
+#define PWM_PINS_GLOBAL(n, p, i) \
+	ZARD_GLOBAL_GPIO_NUM(DT_PHANDLE_BY_IDX(n, p, i)) + DT_PHA_BY_IDX(n, p, i, pin),
 #define PWM_CONN_CHANNEL_DT(n, p, i)                                                               \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
 		    ({ .dev = DEVICE_DT_GET(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
@@ -255,7 +257,7 @@ const pin_size_t arduino_pwm_pins[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwm_pin_gpios, PWM_PINS)
 #else // global pin rule
-	//TODO
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), pwm_pin_gpios, PWM_PINS_GLOBAL)
 #endif
 #elif defined(ZARD_PWM_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_PWM_CONNECTOR), pwm_map, PWM_CONN_PINNUM)
@@ -282,6 +284,8 @@ size_t pwm_pin_index(pin_size_t pinNumber) {
 	DIGITAL_PIN_GPIOS_FIND_PIN( \
                 DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), p, i)),        \
                 DT_PHA_BY_IDX(DT_PATH(zephyr_user), p, i, pin)),
+#define ADC_PINS_GLOBAL(n, p, i) \
+	ZARD_GLOBAL_GPIO_NUM(DT_PHANDLE_BY_IDX(n, p, i)) + DT_PHA_BY_IDX(n, p, i, pin),
 #define ADC_CH_CFG(n,p,i) arduino_adc[i].channel_cfg,
 #define ADC_CONN_CHANNEL_CFG(n, p, i)                                                              \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MAP_ENTRY_PARENT_BY_IDX(n, p, i)),                  \
@@ -312,7 +316,7 @@ const pin_size_t arduino_analog_pins[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
   DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, ADC_PINS)
 #else // global pin rule
-      // TODO
+  DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), adc_pin_gpios, ADC_PINS_GLOBAL)
 #endif
 #elif defined(ZARD_ADC_CONNECTOR)
   DT_FOREACH_MAP_ENTRY(DT_NODELABEL(ZARD_ADC_CONNECTOR), io_channel_map, ADC_CONN_PINNUM)
