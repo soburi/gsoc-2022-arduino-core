@@ -104,15 +104,6 @@
 #define ZARD_ARDUINO_HEADER_R3_DIGITAL_MAP_19 D13
 #define ZARD_ARDUINO_HEADER_R3_DIGITAL_MAP_20 D14
 #define ZARD_ARDUINO_HEADER_R3_DIGITAL_MAP_21 D15
-
-#elif DT_NODE_EXISTS(DT_NODELABEL(arduino_mkr_header))
-#define ZARD_CONNECTOR arduino_mkr_header
-#elif DT_NODE_EXISTS(DT_NODELABEL(arduino_nano_header))
-#define ZARD_CONNECTOR arduino_nano_header
-#elif DT_NODE_EXISTS(DT_NODELABEL(pico_header))
-#define ZARD_CONNECTOR pico_header
-#elif DT_NODE_EXISTS(DT_NODELABEL(boosterpack_header))
-#define ZARD_CONNECTOR boosterpack_header
 #endif
 
 #if DT_NODE_EXISTS(DT_NODELABEL(arduino_adc))
