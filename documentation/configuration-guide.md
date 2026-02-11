@@ -134,6 +134,7 @@ Two ways to reach it (**lowest precedence rule first**):
                            /* ---- snip ---- */
                            <ARDUINO_HEADER_R3_D15 0 &ioport1 0 0>;
         };
+    };
     ```
 
 2. **Define `/zephyr,user/digital-pin-gpios`**

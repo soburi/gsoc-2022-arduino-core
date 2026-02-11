@@ -203,6 +203,7 @@ B. Board devicetree constructs (board-provided defaults)
                            /* ---- snip ---- */
                            <ARDUINO_HEADER_R3_D15 0 &ioport1 0 0>;
         };
+    };
     ```
 
 
@@ -215,9 +216,9 @@ B. Board devicetree constructs (board-provided defaults)
 - **Precedence:**
   - Lower than `/zephyr,user/adc-pin-gpios` (association)
   - Lower than `/zephyr,user/io-channels` (provisioning)
-- **Notes:** `io-channel-map`: left = connector pin id, right = target ADC controller/channel; ADC still needs per-channel config under the ADC device node.
-  - ADC still requires per-channel configuration under the ADC device node,
-    regardless of how the channel list is obtained.
+- **Notes:** `io-channel-map`: left = connector pin id, right = target ADC controller/channel.
+  ADC still requires per-channel configuration under the ADC device node,
+  regardless of how the channel list is obtained.
 - **Example:**
     ```dts
     / {

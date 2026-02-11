@@ -161,7 +161,12 @@
 			DT_MAP_ENTRY_PARENT_BY_IDX(DT_NODELABEL(ZARD_CONNECTOR), gpio_map, i)) +   \
 	DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(DT_NODELABEL(ZARD_CONNECTOR), gpio_map, i, 0)
 
-#if DT_NODE_EXISTS(DT_ALIAS(led0))
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), builtin_led_gpios) &&                                   \
+	(DT_PROP_LEN(DT_PATH(zephyr_user), builtin_led_gpios) > 0)
+#define ZARD_LED_BUILTIN                                                                           \
+	ZARD_GLOBAL_GPIO_OFFSET(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), builtin_led_gpios, 0)) +    \
+		DT_PHA_BY_IDX(DT_PATH(zephyr_user), builtin_led_gpios, 0, pin)
+#elif DT_NODE_EXISTS(DT_ALIAS(led0))
 #define ZARD_LED_BUILTIN                                                                           \
 	ZARD_GLOBAL_GPIO_OFFSET(DT_PHANDLE_BY_IDX(DT_ALIAS(led0), gpios, 0)) +                     \
 		DT_PHA_BY_IDX(DT_ALIAS(led0), gpios, 0, pin)
