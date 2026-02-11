@@ -23,7 +23,8 @@ static constexpr struct gpio_dt_spec arduino_pins[] = {DT_FOREACH_PROP_ELEM_SEP(
 
 #define GET_GPIO_NGPIOS(node_id)                                                                   \
         COND_CODE_1(DT_NODE_HAS_PROP(node_id, gpio_controller),                                    \
-	            (DT_PROP_OR(node_id, ngpios, 0),), ())
+	            (COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),                                 \
+			 (DT_PROP_OR(node_id, ngpios, 0),), (0,))), ())
 
 static constexpr const struct device *gpio_ports[] = {DT_FOREACH_NODE(GET_GPIO_DEVICES)};
 static constexpr uint32_t gpio_ngpios[] = {DT_FOREACH_NODE(GET_GPIO_NGPIOS)};

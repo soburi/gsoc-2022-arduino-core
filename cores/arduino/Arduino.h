@@ -160,7 +160,8 @@
 		 DT_STRING_UPPER_TOKEN_BY_IDX(node, compatible, 0), _PIN_NAME_A_)), num)
 
 #define ZARD_CHECK_GPIO_CTLR(node_id)                                                              \
-        COND_CODE_1(DT_NODE_HAS_PROP(node_id, gpio_controller), (node_id,), ())
+        COND_CODE_1(DT_NODE_HAS_PROP(node_id, gpio_controller),                                   \
+                    (COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (node_id,), ())), ())
 
 #define ZARD_ALL_GPIO_CTLR DT_FOREACH_NODE(ZARD_CHECK_GPIO_CTLR)
 

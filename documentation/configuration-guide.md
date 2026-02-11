@@ -51,7 +51,7 @@ This guide targets Level 4, which supports standard Arduino functions.
 A well-configured board DTS typically includes:
 
 - An Arduino-compatible connector definition,
-  labeled as `arduino_header` (or other supported connectors)
+  labeled as `arduino_header` (`compatible = "arduino-header-r3"`)
 - Optionally, connector mapping nodes for PWM/ADC pin association and channel derivation (commonly `arduino_pwm` and `arduino_adc`)
 - Bus defaults via node labels such as `arduino_serial`, `arduino_i2c`, `arduino_spi`
 - A built-in LED via the `led0` alias (recommended)
