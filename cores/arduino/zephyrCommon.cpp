@@ -313,7 +313,7 @@ const struct adc_dt_spec arduino_adc[] = {
 #endif
 };
 
-/* io-channel-pins node provides a mapping digital pin numbers to adc channels */
+/* adc-pin-gpios provides a mapping digital pin numbers to adc channels */
 const pin_size_t arduino_analog_pins[] = {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), adc_pin_gpios)
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), digital_pin_gpios)
