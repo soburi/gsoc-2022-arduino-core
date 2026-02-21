@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+package arduino;
+
+import "arduino_opts.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+enum CanBitRate {
+  BR_UNSPECIFIED = 0;
+  BR_125k = 125000;
+  BR_250k = 250000;
+  BR_500k = 500000;
+  BR_1000k = 1000000;
+}
+
+service HardwareCAN {
+  option (arduino.extra_includes) = "api/HardwareCAN.h";
+
+  rpc Begin(google.protobuf.Empty) returns (google.protobuf.BoolValue) {
+    option (arduino.cpp_decl) = "bool begin(CanBitRate const can_bitrate)";
+  }
+  rpc End(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void end()";
+  }
+  rpc Write(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "int write(CanMsg const &msg)";
+  }
+  rpc Available(google.protobuf.Empty) returns (google.protobuf.UInt64Value) {
+    option (arduino.cpp_decl) = "size_t available()";
+  }
+  rpc Read(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "CanMsg read()";
+  }
+}

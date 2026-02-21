@@ -16,7 +16,7 @@ zephyr_sources(zephyrCommon.cpp)
 
 if(CONFIG_USE_ARDUINO_API_RUST_IMPLEMENTATION)
   zephyr_sources(zephyrPrint.cpp)
-  zephyr_sources(apiCommon.cpp)
+  zephyr_sources(zephyrString.cpp)
 endif()
 
 if(DEFINED CONFIG_ARDUINO_ENTRY)
@@ -24,4 +24,3 @@ zephyr_sources(main.cpp)
 endif()
 
 endif()
-

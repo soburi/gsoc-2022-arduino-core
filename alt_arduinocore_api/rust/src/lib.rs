@@ -4,6 +4,7 @@
 #![no_std]
 
 mod common;
+mod string;
 pub use common::*;
 
 use core::panic::PanicInfo;

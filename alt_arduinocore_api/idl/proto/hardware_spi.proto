@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+package arduino;
+
+import "arduino_opts.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+enum SPIMode {
+  SPI_MODE0 = 0;
+  SPI_MODE1 = 1;
+  SPI_MODE2 = 2;
+  SPI_MODE3 = 3;
+}
+
+enum SPIBusMode {
+  SPI_CONTROLLER = 0;
+  SPI_PERIPHERAL = 1;
+}
+
+service HardwareSPI {
+  option (arduino.extra_includes) = "api/HardwareSPI.h";
+
+  rpc Transfer(google.protobuf.UInt32Value) returns (google.protobuf.UInt32Value) {
+    option (arduino.cpp_decl) = "uint8_t transfer(uint8_t data)";
+  }
+  rpc Transfer16(google.protobuf.UInt32Value) returns (google.protobuf.UInt32Value) {
+    option (arduino.cpp_decl) = "uint16_t transfer16(uint16_t data)";
+  }
+  rpc TransferBuffer(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void transfer(void *buf, size_t count)";
+  }
+  rpc UsingInterrupt(google.protobuf.Int32Value) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void usingInterrupt(int interruptNumber)";
+  }
+  rpc NotUsingInterrupt(google.protobuf.Int32Value) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void notUsingInterrupt(int interruptNumber)";
+  }
+  rpc BeginTransaction(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void beginTransaction(SPISettings settings)";
+  }
+  rpc EndTransaction(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void endTransaction(void)";
+  }
+  rpc AttachInterrupt(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void attachInterrupt()";
+  }
+  rpc DetachInterrupt(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void detachInterrupt()";
+  }
+  rpc Begin(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void begin()";
+  }
+  rpc End(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void end()";
+  }
+}

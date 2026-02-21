@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+package arduino;
+
+import "arduino_opts.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service Client {
+  option (arduino.extra_includes) = "api/IPAddress.h";
+
+  rpc ConnectAddress(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "int connect(IPAddress ip, uint16_t port)";
+  }
+  rpc ConnectHost(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "int connect(const char *host, uint16_t port)";
+  }
+  rpc ReadBuffer(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "int read(uint8_t *buf, size_t size)";
+  }
+  rpc Stop(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void stop()";
+  }
+  rpc Connected(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {
+    option (arduino.cpp_decl) = "uint8_t connected()";
+  }
+  rpc IsValid(google.protobuf.Empty) returns (google.protobuf.BoolValue) {
+    option (arduino.cpp_decl) = "operator bool()";
+  }
+}

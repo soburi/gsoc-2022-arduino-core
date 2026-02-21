@@ -10,6 +10,8 @@
 #include <api/HardwareSerial.h>
 #include <zephyrSerial.h>
 
+using namespace arduino;
+
 namespace
 {
 

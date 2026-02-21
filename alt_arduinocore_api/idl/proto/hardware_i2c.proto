@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package arduino;
+
+import "arduino_opts.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service HardwareI2C {
+  option (arduino.ifc_header_name) = "hardware_i2c_interface.hpp";
+
+  rpc Begin(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void begin()";
+  }
+  rpc BeginAddress(google.protobuf.UInt32Value) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void begin(uint8_t address)";
+  }
+  rpc End(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void end()";
+  }
+  rpc SetClock(google.protobuf.UInt32Value) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void setClock(uint32_t freq)";
+  }
+  rpc BeginTransmission(google.protobuf.UInt32Value) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void beginTransmission(uint8_t address)";
+  }
+  rpc EndTransmissionStop(google.protobuf.BoolValue) returns (google.protobuf.UInt32Value) {
+    option (arduino.cpp_decl) = "uint8_t endTransmission(bool stopBit)";
+  }
+  rpc EndTransmission(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {
+    option (arduino.cpp_decl) = "uint8_t endTransmission(void)";
+  }
+  rpc RequestFromStop(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "size_t requestFrom(uint8_t address, size_t len, bool stopBit)";
+  }
+  rpc RequestFrom(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "size_t requestFrom(uint8_t address, size_t len)";
+  }
+  rpc OnReceive(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void onReceive(void (*cb)(int))";
+  }
+  rpc OnRequest(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void onRequest(void (*cb)(void))";
+  }
+}

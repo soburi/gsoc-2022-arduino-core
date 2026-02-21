@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+package arduino;
+
+import "arduino_opts.proto";
+import "google/protobuf/empty.proto";
+
+service Server {
+  rpc Begin(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (arduino.cpp_decl) = "void begin()";
+  }
+}
