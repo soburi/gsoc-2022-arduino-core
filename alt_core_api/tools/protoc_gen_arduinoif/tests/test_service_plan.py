@@ -1,0 +1,163 @@
+# SPDX-License-Identifier: Apache-2.0
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+from google.protobuf.compiler import plugin_pb2
+from google.protobuf.descriptor_pb2 import (
+    DescriptorProto,
+    FileDescriptorSet,
+    MethodDescriptorProto,
+    ServiceDescriptorProto,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT / "tools"))
+
+from protoc_gen_arduinoif.constants import METHOD_VISIBILITY_TAG  # noqa: E402
+from protoc_gen_arduinoif.descriptors import (  # noqa: E402
+    collect_message_types,
+    collect_service_descriptors,
+    full_service_name,
+)
+from protoc_gen_arduinoif.method_specs import collect_lineage_methods  # noqa: E402
+from protoc_gen_arduinoif.service_codegen import (  # noqa: E402
+    build_service_plan,
+    iter_rendered_service_headers,
+)
+
+
+def _encode_varint(value: int) -> bytes:
+    data = bytearray()
+    while value > 0x7F:
+        data.append((value & 0x7F) | 0x80)
+        value >>= 7
+    data.append(value)
+    return bytes(data)
+
+
+def _encode_string_option(field_number: int, text: str) -> bytes:
+    payload = text.encode("utf-8")
+    key = (field_number << 3) | 2
+    return _encode_varint(key) + _encode_varint(len(payload)) + payload
+
+
+def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
+    descriptor_path = tmp_path / "input.desc"
+    proto_dir = REPO_ROOT / "alt_core_api/idl/proto"
+    google_dir = proto_dir / "google/protobuf"
+    proto_files = [
+        "print.proto",
+        "stream.proto",
+        "hardware_serial.proto",
+        "common.proto",
+    ]
+
+    command = [
+        "protoc",
+        f"--descriptor_set_out={descriptor_path}",
+        "--include_imports",
+        f"--proto_path={proto_dir}",
+        f"--proto_path={google_dir}",
+        *proto_files,
+    ]
+    subprocess.run(command, cwd=REPO_ROOT, check=True)
+
+    descriptor_set = FileDescriptorSet()
+    descriptor_set.ParseFromString(descriptor_path.read_bytes())
+
+    request = plugin_pb2.CodeGeneratorRequest()
+    request.file_to_generate.extend(proto_files)
+    request.proto_file.extend(descriptor_set.file)
+    return request
+
+
+def _hardware_serial_plan(tmp_path: Path):
+    request = _build_request(tmp_path)
+    message_map = collect_message_types(request)
+    service_index = collect_service_descriptors(request)
+    lineage_cache: dict[str, list[str]] = {}
+
+    target_file = next(
+        proto_file
+        for proto_file in request.proto_file
+        if proto_file.name == "hardware_serial.proto"
+    )
+    target_service = next(
+        service for service in target_file.service if service.name == "HardwareSerial"
+    )
+    target_full_name = full_service_name(target_file.package, target_service.name)
+    return build_service_plan(
+        target_service,
+        target_full_name,
+        service_index,
+        lineage_cache,
+        message_map,
+        target_file.package,
+        list(target_file.enum_type),
+    )
+
+
+def test_build_service_plan_has_expected_headers_and_groups(tmp_path: Path) -> None:
+    plan = _hardware_serial_plan(tmp_path)
+
+    assert plan.ifc_header == "hardware_serial_interface.hpp"
+    assert plan.api_header == "hardware_serial_api.hpp"
+    assert plan.service_header == "hardware_serial_service.hpp"
+    assert plan.service_impl_header == "hardware_serial_service_impl.hpp"
+    assert plan.generate_api is True
+    assert plan.generate_service is True
+    assert plan.generate_service_impl is True
+
+    ifc_methods = [planned.spec for planned in plan.methods if planned.in_ifc]
+    ifc_call_names = [spec.call_name for spec in ifc_methods]
+    assert ifc_call_names == ["begin", "begin", "end", "operator bool"]
+    assert all(spec.visibility == "public" for spec in ifc_methods)
+
+
+def test_iter_rendered_service_headers_uses_stable_order(tmp_path: Path) -> None:
+    plan = _hardware_serial_plan(tmp_path)
+    rendered_names = [name for name, _ in iter_rendered_service_headers(plan)]
+    assert rendered_names == [
+        "hardware_serial_interface.hpp",
+        "hardware_serial_api.hpp",
+        "hardware_serial_service.hpp",
+        "hardware_serial_service_impl.hpp",
+    ]
+
+
+def test_collect_lineage_methods_prefers_latest_duplicate_decl() -> None:
+    empty_message = DescriptorProto(name="Empty")
+    message_map = {".test.Empty": empty_message}
+
+    base_method = MethodDescriptorProto(
+        name="Ping",
+        input_type=".test.Empty",
+        output_type=".test.Empty",
+    )
+    child_method = MethodDescriptorProto(
+        name="Ping",
+        input_type=".test.Empty",
+        output_type=".test.Empty",
+    )
+    child_method.options.MergeFromString(
+        _encode_string_option(METHOD_VISIBILITY_TAG, "protected")
+    )
+
+    base_service = ServiceDescriptorProto(name="Base")
+    base_service.method.extend([base_method])
+    child_service = ServiceDescriptorProto(name="Child")
+    child_service.method.extend([child_method])
+
+    service_index = {
+        ".test.Base": (base_service, "test"),
+        ".test.Child": (child_service, "test"),
+    }
+    lineage = [".test.Base", ".test.Child"]
+
+    methods = collect_lineage_methods(lineage, service_index, message_map)
+    assert len(methods) == 1
+    assert methods[0].visibility == "protected"

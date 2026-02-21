@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+package arduino;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  string cpp_type = 50001;
+  string field_cpp_name = 50002;
+}
+
+extend google.protobuf.MethodOptions {
+  string cpp_name = 50101;
+  string cpp_return = 50102;
+  repeated string cpp_arg_types = 50104;
+  bool source_virtual = 50111;
+  bool emit_api = 50112;
+  bool emit_service = 50113;
+  string method_visibility = 50114;
+}
+
+extend google.protobuf.ServiceOptions {
+  bool generate_api_class = 50201;
+  bool generate_service_class = 50202;
+  bool generate_service_impl_class = 50203;
+  string ifc_class_name = 50211;
+  string api_class_name = 50212;
+  string service_class_name = 50213;
+  string service_impl_class_name = 50214;
+  string api_member_name = 50215;
+  repeated string base_services = 50216;
+  string ifc_header_name = 50217;
+  repeated string extra_includes = 50218;
+}
