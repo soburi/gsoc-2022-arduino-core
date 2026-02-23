@@ -18,12 +18,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif.constants import METHOD_VISIBILITY_TAG  # noqa: E402
-from protoc_gen_arduinoif.descriptors import (  # noqa: E402
-    collect_message_types,
-    collect_service_descriptors,
-    full_service_name,
-)
 from protoc_gen_arduinoif.method_specs import collect_lineage_methods  # noqa: E402
+from protoc_gen_arduinoif.request_context import build_request_context  # noqa: E402
 from protoc_gen_arduinoif.service_codegen import (  # noqa: E402
     build_service_plan,
     iter_rendered_service_headers,
@@ -47,7 +43,7 @@ def _encode_string_option(field_number: int, text: str) -> bytes:
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
     descriptor_path = tmp_path / "input.desc"
-    proto_dir = REPO_ROOT / "alt_core_api/idl/proto"
+    proto_dir = REPO_ROOT / "idl/proto"
     google_dir = proto_dir / "google/protobuf"
     proto_files = [
         "print.proto",
@@ -77,9 +73,7 @@ def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
 
 def _hardware_serial_plan(tmp_path: Path):
     request = _build_request(tmp_path)
-    message_map = collect_message_types(request)
-    service_index = collect_service_descriptors(request)
-    lineage_cache: dict[str, list[str]] = {}
+    context = build_request_context(request)
 
     target_file = next(
         proto_file
@@ -89,15 +83,11 @@ def _hardware_serial_plan(tmp_path: Path):
     target_service = next(
         service for service in target_file.service if service.name == "HardwareSerial"
     )
-    target_full_name = full_service_name(target_file.package, target_service.name)
     return build_service_plan(
         target_service,
-        target_full_name,
-        service_index,
-        lineage_cache,
-        message_map,
         target_file.package,
         list(target_file.enum_type),
+        context,
     )
 
 

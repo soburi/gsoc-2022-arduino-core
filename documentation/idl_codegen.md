@@ -25,20 +25,22 @@ The generator supports per-method and per-service options in `arduino_opts.proto
 
 ## Processing Model
 
-The generator uses a two-stage pipeline per service:
+The generator uses a three-stage pipeline:
 
-1. Build `ServicePlan` IR from descriptors, options, lineage, and method specs.
-2. Stream render headers from that IR in order: `ifc -> api -> service -> service_impl`.
+1. Build `RequestContext` from `CodeGeneratorRequest` (`message_map`, `service_index`, requested file sets, lineage cache).
+2. Build `ServicePlan` IR per service from descriptors, options, lineage, and method specs.
+3. Stream render headers from each plan in order: `ifc -> api -> service -> service_impl`.
 
 `ServicePlan` stores methods as a single list with per-surface flags (`in_ifc`, `in_api`, `in_service`, `in_service_impl`) to avoid duplicating method collections.
 
-Only descriptor indexes (`message_map`, `service_index`) are global. Service plans are built and emitted one-by-one.
+Only `RequestContext` is global. Service plans are built and emitted one-by-one.
 
 Module visibility is intentionally constrained:
 
-1. `service_codegen.py` exposes only `build_service_plan` and `iter_rendered_service_headers`.
-2. Plan construction details are encapsulated in internal `_ServicePlanBuilder`.
-3. Header string assembly details are encapsulated in internal `_ServicePlanRenderer` in `header_render.py`.
+1. `request_context.py` exposes `RequestContext`, `build_request_context`, and `full_service_name`.
+2. `service_codegen.py` exposes only `build_service_plan` and `iter_rendered_service_headers`.
+3. Plan construction details are encapsulated in internal `_ServicePlanBuilder`.
+4. Header string assembly details are encapsulated in internal `_ServicePlanRenderer` in `header_render.py`.
 
 Typical generated header names (per service):
 

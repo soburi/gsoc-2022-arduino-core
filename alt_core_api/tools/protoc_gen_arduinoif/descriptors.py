@@ -6,9 +6,6 @@ import re
 from pathlib import PurePosixPath
 from typing import Dict, List, Optional
 
-from google.protobuf.compiler import plugin_pb2
-from google.protobuf.descriptor_pb2 import DescriptorProto
-
 from .constants import (
     SERVICE_BASE_SERVICES_TAG,
     SERVICE_EXTRA_INCLUDES_TAG,
@@ -19,54 +16,25 @@ from .constants import (
 )
 from .wire_options import get_string_list_option, get_string_option
 
+__all__ = [
+    "snake_case",
+    "dedupe_ordered",
+    "collect_service_lineage",
+    "collect_lineage_includes",
+    "service_class_name",
+    "ifc_class_name",
+    "class_decl",
+    "service_header_name",
+    "service_header_stem",
+    "cpp_namespace_from_package",
+    "types_header_name_for_proto",
+]
+
 
 def snake_case(name: str) -> str:
     first_pass = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
     second_pass = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", first_pass)
     return second_pass.lower()
-
-
-def collect_message_types(
-    request: plugin_pb2.CodeGeneratorRequest,
-) -> Dict[str, DescriptorProto]:
-    messages: Dict[str, DescriptorProto] = {}
-
-    def add_message(
-        package_prefix: str, parent_name: str, message: DescriptorProto
-    ) -> None:
-        if parent_name:
-            full_name = f"{package_prefix}.{parent_name}.{message.name}"
-        else:
-            full_name = f"{package_prefix}.{message.name}"
-        messages[full_name] = message
-
-        child_parent = full_name[len(package_prefix) + 1 :]
-        for nested in message.nested_type:
-            add_message(package_prefix, child_parent, nested)
-
-    for proto_file in request.proto_file:
-        prefix = f".{proto_file.package}" if proto_file.package else ""
-        for message in proto_file.message_type:
-            add_message(prefix, "", message)
-
-    return messages
-
-
-def full_service_name(package_name: str, service_name: str) -> str:
-    if package_name:
-        return f".{package_name}.{service_name}"
-    return f".{service_name}"
-
-
-def collect_service_descriptors(
-    request: plugin_pb2.CodeGeneratorRequest,
-) -> ServiceIndex:
-    services: ServiceIndex = {}
-    for proto_file in request.proto_file:
-        for service in proto_file.service:
-            full_name = full_service_name(proto_file.package, service.name)
-            services[full_name] = (service, proto_file.package)
-    return services
 
 
 def dedupe_ordered(items: List[str]) -> List[str]:

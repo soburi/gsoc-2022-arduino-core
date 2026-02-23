@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterator, List, NamedTuple, Tuple
+from typing import Iterator, List, NamedTuple, Tuple
 
-from google.protobuf.descriptor_pb2 import DescriptorProto, EnumDescriptorProto
+from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
 from .constants import (
     SERVICE_API_CLASS_NAME_TAG,
@@ -14,7 +14,6 @@ from .constants import (
     SERVICE_GENERATE_SERVICE_IMPL_CLASS_TAG,
     SERVICE_IFC_CLASS_NAME_TAG,
     SERVICE_SERVICE_IMPL_CLASS_NAME_TAG,
-    ServiceIndex,
 )
 from .descriptors import (
     collect_lineage_includes,
@@ -34,6 +33,7 @@ from .header_render import (
 )
 from .method_specs import collect_lineage_methods, method_spec_from_descriptor
 from .model import PlannedMethod, ServicePlan
+from .request_context import RequestContext, full_service_name
 from .wire_options import get_bool_option, get_string_option
 
 __all__ = [
@@ -57,37 +57,32 @@ class _ServicePlanBuilder:
     def __init__(
         self,
         service,
-        service_full_name: str,
-        service_index: ServiceIndex,
-        lineage_cache: Dict[str, List[str]],
-        message_map: Dict[str, DescriptorProto],
         package_name: str,
         proto_enums: List[EnumDescriptorProto],
+        context: RequestContext,
     ) -> None:
         self._service = service
-        self._service_full_name = service_full_name
-        self._service_index = service_index
-        self._lineage_cache = lineage_cache
-        self._message_map = message_map
         self._package_name = package_name
         self._proto_enums = proto_enums
+        self._context = context
+        self._service_full_name = full_service_name(package_name, service.name)
 
     def build(self) -> ServicePlan:
         options = self._resolve_options()
         self._validate_generation_flags(options)
 
         own_method_specs = [
-            method_spec_from_descriptor(method, self._message_map)
+            method_spec_from_descriptor(method, self._context.message_map)
             for method in self._service.method
         ]
         lineage = collect_service_lineage(
             self._service_full_name,
-            self._service_index,
-            self._lineage_cache,
+            self._context.service_index,
+            self._context.lineage_cache,
         )
         ancestor_services = lineage[:-1]
         lineage_method_specs = collect_lineage_methods(
-            lineage, self._service_index, self._message_map
+            lineage, self._context.service_index, self._context.message_map
         )
         own_virtual_decls = {
             spec.decl for spec in own_method_specs if spec.source_virtual
@@ -119,12 +114,12 @@ class _ServicePlanBuilder:
         )
 
         include_list = dedupe_ordered(
-            collect_lineage_includes(lineage, self._service_index)
+            collect_lineage_includes(lineage, self._context.service_index)
         )
         service_base_ifc_class_names: List[str] = []
         service_base_ifc_header_names: List[str] = []
         for ancestor_full_name in ancestor_services:
-            ancestor_service, _ = self._service_index[ancestor_full_name]
+            ancestor_service, _ = self._context.service_index[ancestor_full_name]
             service_base_ifc_class_names.append(ifc_class_name(ancestor_service))
             service_base_ifc_header_names.append(service_header_name(ancestor_service))
         service_base_ifc_class_names = dedupe_ordered(service_base_ifc_class_names)
@@ -277,21 +272,15 @@ class _ServicePlanBuilder:
 
 def build_service_plan(
     service,
-    service_full_name: str,
-    service_index: ServiceIndex,
-    lineage_cache: Dict[str, List[str]],
-    message_map: Dict[str, DescriptorProto],
     package_name: str,
     proto_enums: List[EnumDescriptorProto],
+    context: RequestContext,
 ) -> ServicePlan:
     return _ServicePlanBuilder(
         service,
-        service_full_name,
-        service_index,
-        lineage_cache,
-        message_map,
         package_name,
         proto_enums,
+        context,
     ).build()
 
 
