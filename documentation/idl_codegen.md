@@ -38,7 +38,7 @@ Only `RequestContext` is global. Service plans are built and emitted one-by-one.
 Module visibility is intentionally constrained:
 
 1. `request_context.py` exposes `RequestContext`, `build_request_context`, and `full_service_name`.
-2. `service_codegen.py` exposes only `build_service_plan` and `iter_rendered_service_headers`.
+2. `service_codegen.py` exposes only `build_service_plan` and `render_service_headers`.
 3. Plan construction details are encapsulated in internal `_ServicePlanBuilder`.
 4. Header string assembly details are encapsulated in internal `_ServicePlanRenderer` in `header_render.py`.
 

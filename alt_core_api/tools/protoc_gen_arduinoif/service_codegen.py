@@ -31,14 +31,14 @@ from .header_render import (
     render_service_header_content,
     render_service_impl_header_content,
 )
-from .method_specs import collect_lineage_methods, method_spec_from_descriptor
+from .method_specs import collect_lineage_methods
 from .model import PlannedMethod, ServicePlan
 from .request_context import RequestContext, full_service_name
 from .wire_options import get_bool_option, get_string_option
 
 __all__ = [
     "build_service_plan",
-    "iter_rendered_service_headers",
+    "render_service_headers",
 ]
 
 
@@ -71,10 +71,11 @@ class _ServicePlanBuilder:
         options = self._resolve_options()
         self._validate_generation_flags(options)
 
-        own_method_specs = [
-            method_spec_from_descriptor(method, self._context.message_map)
-            for method in self._service.method
-        ]
+        own_method_specs = collect_lineage_methods(
+            [self._service_full_name],
+            self._context.service_index,
+            self._context.message_map,
+        )
         lineage = collect_service_lineage(
             self._service_full_name,
             self._context.service_index,
@@ -284,7 +285,7 @@ def build_service_plan(
     ).build()
 
 
-def iter_rendered_service_headers(plan: ServicePlan) -> Iterator[Tuple[str, str]]:
+def render_service_headers(plan: ServicePlan) -> Iterator[Tuple[str, str]]:
     yield (
         plan.ifc_header,
         render_ifc_header_content(plan),

@@ -21,6 +21,10 @@ from .constants import (
 from .model import MethodSpec
 from .wire_options import get_bool_option, get_string_list_option, get_string_option
 
+__all__ = [
+    "collect_lineage_methods",
+]
+
 
 def _field_type(field: FieldDescriptorProto) -> str:
     default_types = {
@@ -114,7 +118,7 @@ def _build_decl(return_type: str, method_name: str, param_decls: List[str]) -> s
     return f"{return_type} {method_name}({params_blob})"
 
 
-def method_spec_from_descriptor(
+def _method_spec_from_descriptor(
     method, message_map: Dict[str, DescriptorProto]
 ) -> MethodSpec:
     source_virtual = get_bool_option(method.options, METHOD_SOURCE_VIRTUAL_TAG, True)
@@ -164,7 +168,7 @@ def collect_lineage_methods(
     for service_full_name in lineage:
         service, _ = service_index[service_full_name]
         for method in service.method:
-            spec = method_spec_from_descriptor(method, message_map)
+            spec = _method_spec_from_descriptor(method, message_map)
             by_decl.pop(spec.decl, None)
             by_decl[spec.decl] = spec
 

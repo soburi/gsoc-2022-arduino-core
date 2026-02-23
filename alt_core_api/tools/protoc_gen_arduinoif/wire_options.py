@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
+__all__ = [
+    "get_string_option",
+    "get_bool_option",
+    "get_string_list_option",
+]
+
 ParsedFields = Dict[int, List[Tuple[int, object]]]
 _OPTIONS_PARSE_CACHE: Dict[int, Tuple[bytes, ParsedFields]] = {}
 _OPTIONS_PARSE_CACHE_LIMIT = 1024

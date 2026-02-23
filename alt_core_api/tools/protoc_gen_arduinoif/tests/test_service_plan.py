@@ -22,7 +22,7 @@ from protoc_gen_arduinoif.method_specs import collect_lineage_methods  # noqa: E
 from protoc_gen_arduinoif.request_context import build_request_context  # noqa: E402
 from protoc_gen_arduinoif.service_codegen import (  # noqa: E402
     build_service_plan,
-    iter_rendered_service_headers,
+    render_service_headers,
 )
 
 
@@ -108,9 +108,9 @@ def test_build_service_plan_has_expected_headers_and_groups(tmp_path: Path) -> N
     assert all(spec.visibility == "public" for spec in ifc_methods)
 
 
-def test_iter_rendered_service_headers_uses_stable_order(tmp_path: Path) -> None:
+def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
     plan = _hardware_serial_plan(tmp_path)
-    rendered_names = [name for name, _ in iter_rendered_service_headers(plan)]
+    rendered_names = [name for name, _ in render_service_headers(plan)]
     assert rendered_names == [
         "hardware_serial_interface.hpp",
         "hardware_serial_api.hpp",

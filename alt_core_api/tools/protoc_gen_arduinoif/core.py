@@ -9,7 +9,11 @@ from google.protobuf.compiler import plugin_pb2
 from .descriptors import types_header_name_for_proto
 from .header_render import render_enum_header
 from .request_context import build_request_context
-from .service_codegen import build_service_plan, iter_rendered_service_headers
+from .service_codegen import build_service_plan, render_service_headers
+
+__all__ = [
+    "main",
+]
 
 
 def main() -> int:
@@ -36,7 +40,7 @@ def main() -> int:
                     list(proto_file.enum_type),
                     context,
                 )
-                for name, content in iter_rendered_service_headers(service_plan):
+                for name, content in render_service_headers(service_plan):
                     output = response.file.add()
                     output.name = name
                     output.content = content
