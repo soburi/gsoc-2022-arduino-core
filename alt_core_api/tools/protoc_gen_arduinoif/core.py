@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 
@@ -16,34 +17,41 @@ __all__ = [
 ]
 
 
+def _iter_generated_files(
+    request: plugin_pb2.CodeGeneratorRequest,
+) -> Iterator[Tuple[str, str]]:
+    context = build_request_context(request)
+
+    for proto_file in request.proto_file:
+        if not context.is_requested_proto(proto_file.name):
+            continue
+
+        if proto_file.enum_type and not proto_file.service:
+            yield (
+                types_header_name_for_proto(proto_file.name),
+                render_enum_header(list(proto_file.enum_type)),
+            )
+
+        for service in proto_file.service:
+            service_plan = build_service_plan(
+                service,
+                proto_file.package,
+                list(proto_file.enum_type),
+                context,
+            )
+            yield from render_service_headers(service_plan)
+
+
 def main() -> int:
     request = plugin_pb2.CodeGeneratorRequest()
     request.ParseFromString(sys.stdin.buffer.read())
-
     response = plugin_pb2.CodeGeneratorResponse()
-    context = build_request_context(request)
 
     try:
-        for proto_file in request.proto_file:
-            if not context.is_requested_proto(proto_file.name):
-                continue
-
-            if proto_file.enum_type and not proto_file.service:
-                output = response.file.add()
-                output.name = types_header_name_for_proto(proto_file.name)
-                output.content = render_enum_header(list(proto_file.enum_type))
-
-            for service in proto_file.service:
-                service_plan = build_service_plan(
-                    service,
-                    proto_file.package,
-                    list(proto_file.enum_type),
-                    context,
-                )
-                for name, content in render_service_headers(service_plan):
-                    output = response.file.add()
-                    output.name = name
-                    output.content = content
+        for name, content in _iter_generated_files(request):
+            output = response.file.add()
+            output.name = name
+            output.content = content
     except Exception as error:
         response.error = str(error)
 
