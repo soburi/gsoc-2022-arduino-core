@@ -212,12 +212,14 @@ class ServiceModelBuilder:
             if options.generate_api:
                 service_impl_includes.insert(1, api_header)
 
+        namespace_name = "::".join(part for part in self._package_name.split(".") if part)
+
         return ServiceModel(
             include_list=include_list,
             api_includes=api_includes,
             service_includes=service_includes,
             service_impl_includes=service_impl_includes,
-            namespace_name=self._cpp_namespace_from_package(self._package_name),
+            namespace_name=namespace_name,
             proto_enums=self._proto_enums,
             ifc_name=options.ifc_name,
             api_name=options.api_name,
@@ -432,10 +434,6 @@ class ServiceModelBuilder:
             service, _ = self._context.service_index[service_full_name]
             includes.extend(self._options_view(service.options).string_list("extra_includes"))
         return includes
-
-    @staticmethod
-    def _cpp_namespace_from_package(package_name: str) -> str:
-        return "::".join(part for part in package_name.split(".") if part)
 
     @staticmethod
     def _snake_case(name: str) -> str:
