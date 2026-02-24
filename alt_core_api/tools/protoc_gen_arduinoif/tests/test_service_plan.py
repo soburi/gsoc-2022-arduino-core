@@ -22,7 +22,7 @@ from protoc_gen_arduinoif import (  # noqa: E402
     ServicePlanBuilder,
 )
 from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
-from protoc_gen_arduinoif.options_reader import arduino_opts_pb2  # noqa: E402
+from protoc_gen_arduinoif.plan_builder import arduino_opts_pb2  # noqa: E402
 
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:

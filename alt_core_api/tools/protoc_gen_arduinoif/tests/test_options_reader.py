@@ -16,7 +16,7 @@ from google.protobuf.descriptor_pb2 import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif.options_reader import (  # noqa: E402
+from protoc_gen_arduinoif.plan_builder import (  # noqa: E402
     arduino_opts_pb2,
     field_cpp_name,
     field_cpp_type,
