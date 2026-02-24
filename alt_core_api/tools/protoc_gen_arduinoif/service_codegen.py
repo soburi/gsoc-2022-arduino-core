@@ -8,6 +8,8 @@ from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
 from . import (
+    PlannedMethod,
+    ServicePlan,
     SERVICE_BASE_SERVICES_TAG,
     SERVICE_API_CLASS_NAME_TAG,
     SERVICE_API_MEMBER_NAME_TAG,
@@ -28,7 +30,6 @@ from .header_render import (
     render_service_impl_header_content,
 )
 from .method_specs import collect_lineage_methods
-from .model import PlannedMethod, ServicePlan
 from .request_context import RequestContext, full_service_name
 from .wire_options import get_bool_option, get_string_list_option, get_string_option
 

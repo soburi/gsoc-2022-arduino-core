@@ -16,9 +16,9 @@ from . import (
     METHOD_EMIT_SERVICE_TAG,
     METHOD_SOURCE_VIRTUAL_TAG,
     METHOD_VISIBILITY_TAG,
+    MethodSpec,
     ServiceIndex,
 )
-from .model import MethodSpec
 from .wire_options import get_bool_option, get_string_list_option, get_string_option
 
 __all__ = [
