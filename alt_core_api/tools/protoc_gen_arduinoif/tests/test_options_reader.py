@@ -17,19 +17,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif.plan_builder import (  # noqa: E402
+    _OptionsView,
     arduino_opts_pb2,
-    field_cpp_name,
-    field_cpp_type,
-    method_cpp_arg_types,
-    method_cpp_name,
-    method_cpp_return,
-    method_emit_api,
-    method_emit_service,
-    method_source_virtual,
-    method_visibility,
-    service_api_class_name,
-    service_base_services,
-    service_generate_api_class,
 )
 
 
@@ -77,17 +66,20 @@ def test_method_and_service_options_from_extensions(tmp_path: Path) -> None:
     )
     begin_baud = next(method for method in service.method if method.name == "BeginBaud")
 
-    assert service_generate_api_class(service) is True
-    assert service_base_services(service) == ["Stream"]
-    assert service_api_class_name(service) == "arduino::HardwareSerial"
+    service_opts = _OptionsView(service.options)
+    method_opts = _OptionsView(begin_baud.options)
 
-    assert method_cpp_name(begin_baud) == "begin"
-    assert method_cpp_return(begin_baud) == ""
-    assert method_cpp_arg_types(begin_baud) == ["unsigned long"]
-    assert method_visibility(begin_baud) == ""
-    assert method_source_virtual(begin_baud, True) is True
-    assert method_emit_api(begin_baud, True) is True
-    assert method_emit_service(begin_baud, True) is True
+    assert service_opts.bool("generate_api_class", False) is True
+    assert service_opts.string_list("base_services") == ["Stream"]
+    assert service_opts.string("api_class_name") == "arduino::HardwareSerial"
+
+    assert method_opts.string("cpp_name") == "begin"
+    assert method_opts.string("cpp_return") == ""
+    assert method_opts.string_list("cpp_arg_types") == ["unsigned long"]
+    assert method_opts.string("method_visibility") == ""
+    assert method_opts.bool("source_virtual", True) is True
+    assert method_opts.bool("emit_api", True) is True
+    assert method_opts.bool("emit_service", True) is True
 
 
 def test_field_option_accessors() -> None:
@@ -97,11 +89,12 @@ def test_field_option_accessors() -> None:
     field.number = 1
     field.type = FieldDescriptorProto.TYPE_UINT32
 
-    assert field_cpp_type(field) == ""
-    assert field_cpp_name(field) == ""
+    field_opts = _OptionsView(field.options)
+    assert field_opts.string("cpp_type") == ""
+    assert field_opts.string("field_cpp_name") == ""
 
     field.options.Extensions[arduino_opts_pb2.cpp_type] = "uint8_t"
     field.options.Extensions[arduino_opts_pb2.field_cpp_name] = "input_value"
 
-    assert field_cpp_type(field) == "uint8_t"
-    assert field_cpp_name(field) == "input_value"
+    assert field_opts.string("cpp_type") == "uint8_t"
+    assert field_opts.string("field_cpp_name") == "input_value"

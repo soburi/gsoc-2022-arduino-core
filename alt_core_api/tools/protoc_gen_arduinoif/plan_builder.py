@@ -139,88 +139,21 @@ def _get_bool(options, extension, default: bool) -> bool:
     return bool(options.Extensions[extension])
 
 
-def field_cpp_type(field) -> str:
-    return _get_string(field.options, arduino_opts_pb2.cpp_type)
+class _OptionsView:
+    def __init__(self, options) -> None:
+        self._options = options
 
+    def string(self, extension_name: str) -> str:
+        extension = getattr(arduino_opts_pb2, extension_name)
+        return _get_string(self._options, extension)
 
-def field_cpp_name(field) -> str:
-    return _get_string(field.options, arduino_opts_pb2.field_cpp_name)
+    def string_list(self, extension_name: str) -> List[str]:
+        extension = getattr(arduino_opts_pb2, extension_name)
+        return _get_string_list(self._options, extension)
 
-
-def method_cpp_name(method) -> str:
-    return _get_string(method.options, arduino_opts_pb2.cpp_name)
-
-
-def method_cpp_return(method) -> str:
-    return _get_string(method.options, arduino_opts_pb2.cpp_return)
-
-
-def method_cpp_arg_types(method) -> List[str]:
-    return _get_string_list(method.options, arduino_opts_pb2.cpp_arg_types)
-
-
-def method_source_virtual(method, default: bool = True) -> bool:
-    return _get_bool(method.options, arduino_opts_pb2.source_virtual, default)
-
-
-def method_emit_api(method, default: bool = True) -> bool:
-    return _get_bool(method.options, arduino_opts_pb2.emit_api, default)
-
-
-def method_emit_service(method, default: bool = True) -> bool:
-    return _get_bool(method.options, arduino_opts_pb2.emit_service, default)
-
-
-def method_visibility(method) -> str:
-    return _get_string(method.options, arduino_opts_pb2.method_visibility)
-
-
-def service_generate_api_class(service, default: bool = False) -> bool:
-    return _get_bool(service.options, arduino_opts_pb2.generate_api_class, default)
-
-
-def service_generate_service_class(service, default: bool = False) -> bool:
-    return _get_bool(service.options, arduino_opts_pb2.generate_service_class, default)
-
-
-def service_generate_service_impl_class(service, default: bool = False) -> bool:
-    return _get_bool(
-        service.options,
-        arduino_opts_pb2.generate_service_impl_class,
-        default,
-    )
-
-
-def service_ifc_class_name(service) -> str:
-    return _get_string(service.options, arduino_opts_pb2.ifc_class_name)
-
-
-def service_api_class_name(service) -> str:
-    return _get_string(service.options, arduino_opts_pb2.api_class_name)
-
-
-def service_service_class_name(service) -> str:
-    return _get_string(service.options, arduino_opts_pb2.service_class_name)
-
-
-def service_service_impl_class_name(service) -> str:
-    return _get_string(service.options, arduino_opts_pb2.service_impl_class_name)
-
-
-def service_api_member_name(service) -> str:
-    return _get_string(service.options, arduino_opts_pb2.api_member_name)
-
-
-def service_base_services(service) -> List[str]:
-    return _get_string_list(service.options, arduino_opts_pb2.base_services)
-
-
-def service_ifc_header_name(service) -> str:
-    return _get_string(service.options, arduino_opts_pb2.ifc_header_name)
-
-
-def service_extra_includes(service) -> List[str]:
-    return _get_string_list(service.options, arduino_opts_pb2.extra_includes)
+    def bool(self, extension_name: str, default: bool = False) -> bool:
+        extension = getattr(arduino_opts_pb2, extension_name)
+        return _get_bool(self._options, extension, default)
 
 
 class _ResolvedServiceOptions(NamedTuple):
@@ -414,10 +347,11 @@ class ServicePlanBuilder:
     def _method_spec_from_descriptor(
         cls, method, message_map: Dict[str, DescriptorProto]
     ) -> MethodSpec:
-        source_virtual = method_source_virtual(method, True)
-        emit_api = method_emit_api(method, True)
-        emit_service = method_emit_service(method, True)
-        visibility = method_visibility(method).strip().lower() or "public"
+        options = _OptionsView(method.options)
+        source_virtual = options.bool("source_virtual", True)
+        emit_api = options.bool("emit_api", True)
+        emit_service = options.bool("emit_service", True)
+        visibility = options.string("method_visibility").strip().lower() or "public"
         if visibility not in {"public", "protected", "private"}:
             raise ValueError(
                 f"{method.name}: unsupported method_visibility '{visibility}' "
@@ -427,7 +361,7 @@ class ServicePlanBuilder:
         method_name = cls._resolved_method_name(method)
         return_type = cls._resolved_return_type(method, message_map)
 
-        arg_types = method_cpp_arg_types(method)
+        arg_types = options.string_list("cpp_arg_types")
         if arg_types:
             param_decls, arg_names = cls._build_option_params(arg_types)
         else:
@@ -451,7 +385,7 @@ class ServicePlanBuilder:
     def _resolved_return_type(
         cls, method, message_map: Dict[str, DescriptorProto]
     ) -> str:
-        return_type = method_cpp_return(method).strip()
+        return_type = _OptionsView(method.options).string("cpp_return").strip()
         if return_type:
             return return_type
 
@@ -468,7 +402,7 @@ class ServicePlanBuilder:
 
     @staticmethod
     def _resolved_method_name(method) -> str:
-        method_name = method_cpp_name(method).strip()
+        method_name = _OptionsView(method.options).string("cpp_name").strip()
         if method_name:
             return method_name
         return method.name
@@ -511,14 +445,14 @@ class ServicePlanBuilder:
 
     @classmethod
     def _resolved_field_type(cls, field: FieldDescriptorProto) -> str:
-        param_type = field_cpp_type(field).strip()
+        param_type = _OptionsView(field.options).string("cpp_type").strip()
         if param_type:
             return param_type
         return cls._field_type(field)
 
     @staticmethod
     def _resolved_field_name(field: FieldDescriptorProto) -> str:
-        param_name = field_cpp_name(field).strip()
+        param_name = _OptionsView(field.options).string("field_cpp_name").strip()
         if param_name:
             return param_name
         return field.name
@@ -528,13 +462,14 @@ class ServicePlanBuilder:
         return cls._default_types.get(field.type, "int32_t")
 
     def _resolve_options(self) -> _ResolvedServiceOptions:
-        ifc_name = service_ifc_class_name(self._service).strip() or f"{self._service.name}Interface"
-        api_name = service_api_class_name(self._service).strip() or f"{self._service.name}Api"
+        options = _OptionsView(self._service.options)
+        ifc_name = options.string("ifc_class_name").strip() or f"{self._service.name}Interface"
+        api_name = options.string("api_class_name").strip() or f"{self._service.name}Api"
         service_impl_name = (
-            service_service_impl_class_name(self._service).strip()
+            options.string("service_impl_class_name").strip()
             or f"{self._service.name}ServiceImpl"
         )
-        api_member_name = service_api_member_name(self._service).strip() or "api_"
+        api_member_name = options.string("api_member_name").strip() or "api_"
 
         return _ResolvedServiceOptions(
             ifc_name=ifc_name,
@@ -542,12 +477,9 @@ class ServicePlanBuilder:
             service_name=self._service_class_name(self._service),
             service_impl_name=service_impl_name,
             api_member_name=api_member_name,
-            generate_api=service_generate_api_class(self._service, False),
-            generate_service=service_generate_service_class(self._service, False),
-            generate_service_impl=service_generate_service_impl_class(
-                self._service,
-                False,
-            ),
+            generate_api=options.bool("generate_api_class", False),
+            generate_service=options.bool("generate_service_class", False),
+            generate_service_impl=options.bool("generate_service_impl_class", False),
         )
 
     def _validate_generation_flags(self, options: _ResolvedServiceOptions) -> None:
@@ -608,7 +540,7 @@ class ServicePlanBuilder:
         if entry is None:
             raise ValueError(f"service '{service_full_name}' not found")
         service, package_name = entry
-        base_refs = service_base_services(service)
+        base_refs = _OptionsView(service.options).string_list("base_services")
 
         inherited: List[str] = []
         for base_ref in base_refs:
@@ -649,20 +581,20 @@ class ServicePlanBuilder:
         includes: List[str] = []
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
-            includes.extend(service_extra_includes(service))
+            includes.extend(_OptionsView(service.options).string_list("extra_includes"))
         return self._dedupe_ordered(includes)
 
     @staticmethod
     def _service_class_name(service) -> str:
-        return service_service_class_name(service).strip() or f"{service.name}Service"
+        return _OptionsView(service.options).string("service_class_name").strip() or f"{service.name}Service"
 
     @staticmethod
     def _ifc_class_name(service) -> str:
-        return service_ifc_class_name(service).strip() or f"{service.name}Interface"
+        return _OptionsView(service.options).string("ifc_class_name").strip() or f"{service.name}Interface"
 
     @classmethod
     def _service_header_name(cls, service) -> str:
-        header_name = service_ifc_header_name(service).strip()
+        header_name = _OptionsView(service.options).string("ifc_header_name").strip()
         if header_name:
             return header_name
         return f"{cls._snake_case(service.name)}_interface.hpp"
