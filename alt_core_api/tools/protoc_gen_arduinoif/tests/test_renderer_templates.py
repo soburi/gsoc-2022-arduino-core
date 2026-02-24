@@ -11,11 +11,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif import MethodSpec, PlannedMethod  # noqa: E402
-from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
-from protoc_gen_arduinoif.service_plan import ServicePlan  # noqa: E402
+from protoc_gen_arduinoif.service_renderer import ServiceRenderer  # noqa: E402
+from protoc_gen_arduinoif.service_model import ServiceModel  # noqa: E402
 
 
-def _sample_plan() -> ServicePlan:
+def _sample_model() -> ServiceModel:
     enum_desc = EnumDescriptorProto(name="Mode")
     enum_desc.value.add(name="MODE_A", number=0)
 
@@ -59,7 +59,7 @@ def _sample_plan() -> ServicePlan:
         PlannedMethod(baz_spec, True, True, True, True),
     ]
 
-    return ServicePlan(
+    return ServiceModel(
         include_list=["ifc_dep.hpp"],
         api_includes=["api_dep.hpp"],
         service_includes=["service_dep.hpp"],
@@ -84,8 +84,8 @@ def _sample_plan() -> ServicePlan:
 
 
 def test_renderer_templates_emit_expected_fragments() -> None:
-    plan = _sample_plan()
-    renderer = ServicePlanRenderer(plan)
+    model = _sample_model()
+    renderer = ServiceRenderer(model)
 
     ifc_content = renderer.render_ifc_header_content()
     assert "class ExampleInterface" in ifc_content
@@ -110,8 +110,8 @@ def test_renderer_templates_emit_expected_fragments() -> None:
 
 
 def test_renderer_template_iter_order_is_stable() -> None:
-    plan = _sample_plan()
-    renderer = ServicePlanRenderer(plan)
+    model = _sample_model()
+    renderer = ServiceRenderer(model)
 
     names = [name for name, _ in renderer.iter_headers()]
     assert names == [

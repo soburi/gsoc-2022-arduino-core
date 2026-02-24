@@ -19,13 +19,13 @@ sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif import (  # noqa: E402
     RequestContext,
-    ServicePlanBuilder,
+    ServiceModelBuilder,
 )
 from protoc_gen_arduinoif.core import _load_arduino_opts_pb2  # noqa: E402
-from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
+from protoc_gen_arduinoif.service_renderer import ServiceRenderer  # noqa: E402
 
 arduino_opts_pb2 = _load_arduino_opts_pb2()
-ServicePlanBuilder.configure_options_module(arduino_opts_pb2)
+ServiceModelBuilder.configure_options_module(arduino_opts_pb2)
 
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
@@ -58,7 +58,7 @@ def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
     return request
 
 
-def _hardware_serial_plan(tmp_path: Path):
+def _hardware_serial_model(tmp_path: Path):
     request = _build_request(tmp_path)
     context = RequestContext.build(request)
 
@@ -70,7 +70,7 @@ def _hardware_serial_plan(tmp_path: Path):
     target_service = next(
         service for service in target_file.service if service.name == "HardwareSerial"
     )
-    return ServicePlanBuilder.build(
+    return ServiceModelBuilder.build(
         target_service,
         target_file.package,
         list(target_file.enum_type),
@@ -78,26 +78,26 @@ def _hardware_serial_plan(tmp_path: Path):
     )
 
 
-def test_build_service_plan_has_expected_headers_and_groups(tmp_path: Path) -> None:
-    plan = _hardware_serial_plan(tmp_path)
+def test_build_service_model_has_expected_headers_and_groups(tmp_path: Path) -> None:
+    model = _hardware_serial_model(tmp_path)
 
-    assert plan.ifc_header == "hardware_serial_interface.hpp"
-    assert plan.api_header == "hardware_serial_api.hpp"
-    assert plan.service_header == "hardware_serial_service.hpp"
-    assert plan.service_impl_header == "hardware_serial_service_impl.hpp"
-    assert plan.generate_api is True
-    assert plan.generate_service is True
-    assert plan.generate_service_impl is True
+    assert model.ifc_header == "hardware_serial_interface.hpp"
+    assert model.api_header == "hardware_serial_api.hpp"
+    assert model.service_header == "hardware_serial_service.hpp"
+    assert model.service_impl_header == "hardware_serial_service_impl.hpp"
+    assert model.generate_api is True
+    assert model.generate_service is True
+    assert model.generate_service_impl is True
 
-    ifc_methods = [planned.spec for planned in plan.methods if planned.in_ifc]
+    ifc_methods = [planned.spec for planned in model.methods if planned.in_ifc]
     ifc_call_names = [spec.call_name for spec in ifc_methods]
     assert ifc_call_names == ["begin", "begin", "end", "operator bool"]
     assert all(spec.visibility == "public" for spec in ifc_methods)
 
 
 def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
-    plan = _hardware_serial_plan(tmp_path)
-    rendered_names = [name for name, _ in ServicePlanRenderer(plan).iter_headers()]
+    model = _hardware_serial_model(tmp_path)
+    rendered_names = [name for name, _ in ServiceRenderer(model).iter_headers()]
     assert rendered_names == [
         "hardware_serial_interface.hpp",
         "hardware_serial_api.hpp",
@@ -106,7 +106,7 @@ def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
     ]
 
 
-def test_build_service_plan_prefers_latest_duplicate_decl() -> None:
+def test_build_service_model_prefers_latest_duplicate_decl() -> None:
     empty_message = DescriptorProto(name="Empty")
     message_map = {".test.Empty": empty_message}
 
@@ -139,12 +139,12 @@ def test_build_service_plan_prefers_latest_duplicate_decl() -> None:
         requested_files=set(),
         requested_basenames=set(),
     )
-    plan = ServicePlanBuilder.build(
+    model = ServiceModelBuilder.build(
         child_service,
         "test",
         [],
         context,
     )
-    specs = [planned.spec for planned in plan.methods]
+    specs = [planned.spec for planned in model.methods]
     assert len(specs) == 1
     assert specs[0].visibility == "protected"

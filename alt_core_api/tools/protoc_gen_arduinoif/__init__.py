@@ -24,8 +24,8 @@ class PlannedMethod(NamedTuple):
     in_service: bool
     in_service_impl: bool
 
-from .plan_builder import ServicePlanBuilder
-from .service_plan import ServicePlan
+from .service_model_builder import ServiceModelBuilder
+from .service_model import ServiceModel
 from .request_context import RequestContext
 from .core import main
 
@@ -33,7 +33,7 @@ __all__ = [
     "main",
     "MethodSpec",
     "PlannedMethod",
-    "ServicePlan",
-    "ServicePlanBuilder",
+    "ServiceModel",
+    "ServiceModelBuilder",
     "RequestContext",
 ]

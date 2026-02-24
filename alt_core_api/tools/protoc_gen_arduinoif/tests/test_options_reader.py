@@ -18,11 +18,11 @@ from google.protobuf.descriptor_pb2 import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif import RequestContext, ServicePlanBuilder  # noqa: E402
+from protoc_gen_arduinoif import RequestContext, ServiceModelBuilder  # noqa: E402
 from protoc_gen_arduinoif.core import _load_arduino_opts_pb2  # noqa: E402
 
 arduino_opts_pb2 = _load_arduino_opts_pb2()
-ServicePlanBuilder.configure_options_module(arduino_opts_pb2)
+ServiceModelBuilder.configure_options_module(arduino_opts_pb2)
 
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
@@ -69,17 +69,17 @@ def test_builder_reads_service_and_method_extensions(tmp_path: Path) -> None:
     )
     service = next(s for s in hardware_serial_file.service if s.name == "HardwareSerial")
 
-    plan = ServicePlanBuilder.build(
+    model = ServiceModelBuilder.build(
         service,
         hardware_serial_file.package,
         list(hardware_serial_file.enum_type),
         context,
     )
 
-    assert plan.generate_api is True
-    assert plan.api_name == "arduino::HardwareSerial"
+    assert model.generate_api is True
+    assert model.api_name == "arduino::HardwareSerial"
 
-    ifc_decls = [planned.spec.decl for planned in plan.methods if planned.in_ifc]
+    ifc_decls = [planned.spec.decl for planned in model.methods if planned.in_ifc]
     assert "void begin(unsigned long arg0)" in ifc_decls
     assert "void begin(unsigned long arg0, uint16_t arg1)" in ifc_decls
 
@@ -116,7 +116,7 @@ def test_builder_reads_field_extensions_from_input_message() -> None:
         requested_basenames=set(),
     )
 
-    plan = ServicePlanBuilder.build(service, "test", [], context)
-    ifc_specs = [planned.spec for planned in plan.methods if planned.in_ifc]
+    model = ServiceModelBuilder.build(service, "test", [], context)
+    ifc_specs = [planned.spec for planned in model.methods if planned.in_ifc]
     assert len(ifc_specs) == 1
     assert ifc_specs[0].decl == "void Foo(uint8_t input_value)"

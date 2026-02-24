@@ -28,23 +28,23 @@ The generator supports per-method and per-service options in `arduino_opts.proto
 The generator uses a three-stage pipeline:
 
 1. Build `RequestContext` from `CodeGeneratorRequest` (`message_map`, `service_index`, requested file sets, lineage cache).
-2. Build `ServicePlan` IR per service from descriptors, options, lineage, and method specs.
-3. Stream render headers from each plan in order: `ifc -> api -> service -> service_impl`.
+2. Build `ServiceModel` IR per service from descriptors, options, lineage, and method specs.
+3. Stream render headers from each model in order: `ifc -> api -> service -> service_impl`.
 
-`ServicePlan` stores methods as a single list with per-surface flags (`in_ifc`, `in_api`, `in_service`, `in_service_impl`) to avoid duplicating method collections.
+`ServiceModel` stores methods as a single list with per-surface flags (`in_ifc`, `in_api`, `in_service`, `in_service_impl`) to avoid duplicating method collections.
 
-Only `RequestContext` is global. Service plans are built and emitted one-by-one.
+Only `RequestContext` is global. Service models are built and emitted one-by-one.
 
 Module visibility is intentionally constrained:
 
-1. `request_context.py` exposes `RequestContext`, `build_request_context`, and `full_service_name`.
-2. `service_codegen.py` exposes only `build_service_plan` and `render_service_headers`.
-3. Plan construction details are encapsulated in internal `_ServicePlanBuilder`.
-4. Header string assembly details are encapsulated in internal `_ServicePlanRenderer` in `header_render.py`.
+1. `request_context.py` exposes `RequestContext`.
+2. `service_model.py` exposes the `ServiceModel` data structure.
+3. `service_model_builder.py` exposes `ServiceModelBuilder` as the model-construction entry point.
+4. `service_renderer.py` exposes `ServiceRenderer` for header rendering.
 
 Typical generated header names (per service):
 
-1. `*_ifc.hpp`
+1. `*_interface.hpp`
 2. `*_api.hpp`
 3. `*_service.hpp`
 4. `*_service_impl.hpp`

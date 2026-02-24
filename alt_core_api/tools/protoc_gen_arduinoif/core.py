@@ -10,8 +10,8 @@ from typing import Iterator, Tuple
 from google.protobuf.compiler import plugin_pb2
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
-from .header_render import ServicePlanRenderer
-from .plan_builder import ServicePlanBuilder
+from .service_renderer import ServiceRenderer
+from .service_model_builder import ServiceModelBuilder
 from .request_context import RequestContext
 
 __all__ = [
@@ -101,7 +101,7 @@ def _iter_generated_files(
     request: plugin_pb2.CodeGeneratorRequest,
     arduino_opts_pb2: types.ModuleType,
 ) -> Iterator[Tuple[str, str]]:
-    ServicePlanBuilder.configure_options_module(arduino_opts_pb2)
+    ServiceModelBuilder.configure_options_module(arduino_opts_pb2)
     context = RequestContext.build(request)
 
     for proto_file in request.proto_file:
@@ -115,13 +115,13 @@ def _iter_generated_files(
             )
 
         for service in proto_file.service:
-            service_plan = ServicePlanBuilder.build(
+            service_model = ServiceModelBuilder.build(
                 service,
                 proto_file.package,
                 list(proto_file.enum_type),
                 context,
             )
-            yield from ServicePlanRenderer(service_plan).iter_headers()
+            yield from ServiceRenderer(service_model).iter_headers()
 
 
 def _render_enum_header(enums: list[EnumDescriptorProto]) -> str:

@@ -8,10 +8,10 @@ from typing import Iterator, List, Tuple
 from jinja2 import Environment, FileSystemLoader
 
 from . import MethodSpec
-from .service_plan import ServicePlan
+from .service_model import ServiceModel
 
 __all__ = [
-    "ServicePlanRenderer",
+    "ServiceRenderer",
 ]
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -42,9 +42,9 @@ _HEADER_ORDER = [
 ]
 
 
-class ServicePlanRenderer:
-    def __init__(self, plan: ServicePlan) -> None:
-        self._plan = plan
+class ServiceRenderer:
+    def __init__(self, model: ServiceModel) -> None:
+        self._model = model
 
     def render_ifc_header_content(self) -> str:
         return self._render_surface("ifc")
@@ -60,9 +60,9 @@ class ServicePlanRenderer:
 
     def iter_headers(self) -> Iterator[Tuple[str, str]]:
         for header_attr, surface, gate_attr in _HEADER_ORDER:
-            if gate_attr and not getattr(self._plan, gate_attr):
+            if gate_attr and not getattr(self._model, gate_attr):
                 continue
-            yield getattr(self._plan, header_attr), self._render_surface(surface)
+            yield getattr(self._model, header_attr), self._render_surface(surface)
 
     def _render_surface(self, surface: str) -> str:
         template, include_attr, method_attr = _SURFACES[surface]
@@ -72,8 +72,8 @@ class ServicePlanRenderer:
 
         return self._render_template(
             template,
-            includes=getattr(self._plan, include_attr),
-            namespace_name=self._plan.namespace_name,
+            includes=getattr(self._model, include_attr),
+            namespace_name=self._model.namespace_name,
             public_methods=public_methods,
             protected_methods=protected_methods,
             private_methods=private_methods,
@@ -83,25 +83,25 @@ class ServicePlanRenderer:
     def _surface_context(self, surface: str) -> dict:
         if surface == "ifc":
             return {
-                "proto_enums": self._plan.proto_enums,
-                "ifc_name": self._plan.ifc_name,
+                "proto_enums": self._model.proto_enums,
+                "ifc_name": self._model.ifc_name,
             }
         if surface == "api":
             return {
-                "ifc_name": self._plan.ifc_name,
-                "api_name": self._plan.api_name,
+                "ifc_name": self._model.ifc_name,
+                "api_name": self._model.api_name,
             }
         if surface == "service":
             return {
-                "service_name": self._plan.service_name,
-                "service_base_ifc_class_names": self._plan.service_base_ifc_class_names,
+                "service_name": self._model.service_name,
+                "service_base_ifc_class_names": self._model.service_base_ifc_class_names,
             }
         return {
-            "generate_api": self._plan.generate_api,
-            "api_name": self._plan.api_name,
-            "service_name": self._plan.service_name,
-            "service_impl_name": self._plan.service_impl_name,
-            "api_member_name": self._plan.api_member_name,
+            "generate_api": self._model.generate_api,
+            "api_name": self._model.api_name,
+            "service_name": self._model.service_name,
+            "service_impl_name": self._model.service_impl_name,
+            "api_member_name": self._model.api_member_name,
         }
 
     @staticmethod
@@ -117,7 +117,7 @@ class ServicePlanRenderer:
         protected_methods: List[MethodSpec] = []
         private_methods: List[MethodSpec] = []
 
-        for planned in self._plan.methods:
+        for planned in self._model.methods:
             if not getattr(planned, method_attr):
                 continue
             spec = planned.spec

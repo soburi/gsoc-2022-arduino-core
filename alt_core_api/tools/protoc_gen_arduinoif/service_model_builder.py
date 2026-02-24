@@ -13,14 +13,14 @@ from google.protobuf.descriptor_pb2 import (
 
 from . import MethodSpec, PlannedMethod
 from .request_context import RequestContext
-from .service_plan import ServicePlan
+from .service_model import ServiceModel
 
 __all__ = [
-    "ServicePlanBuilder",
+    "ServiceModelBuilder",
 ]
 
 
-class ServicePlanBuilder:
+class ServiceModelBuilder:
     class _ResolvedServiceOptions(NamedTuple):
         ifc_name: str
         api_name: str
@@ -106,7 +106,7 @@ class ServicePlanBuilder:
     @classmethod
     def _options_view(cls, options):
         if cls._arduino_opts_pb2 is None:
-            raise RuntimeError("ServicePlanBuilder options module is not configured")
+            raise RuntimeError("ServiceModelBuilder options module is not configured")
         return cls._OptionsView(options, cls._arduino_opts_pb2)
 
     @classmethod
@@ -116,10 +116,10 @@ class ServicePlanBuilder:
         package_name: str,
         proto_enums: List[EnumDescriptorProto],
         context: RequestContext,
-    ) -> ServicePlan:
+    ) -> ServiceModel:
         return cls(service, package_name, proto_enums, context)._build()
 
-    def _build(self) -> ServicePlan:
+    def _build(self) -> ServiceModel:
         service_opts = self._options_view(self._service.options)
 
         ifc_header = service_opts.string("ifc_header_name").strip() or f"{self._snake_case(self._service.name)}_interface.hpp"
@@ -213,7 +213,7 @@ class ServicePlanBuilder:
             if options.generate_api:
                 service_impl_includes.insert(1, api_header)
 
-        return ServicePlan(
+        return ServiceModel(
             include_list=include_list,
             api_includes=api_includes,
             service_includes=service_includes,
@@ -331,7 +331,7 @@ class ServicePlanBuilder:
 
     def _validate_generation_flags(
         self,
-        options: ServicePlanBuilder._ResolvedServiceOptions,
+        options: ServiceModelBuilder._ResolvedServiceOptions,
     ) -> None:
         if options.generate_service_impl and not options.generate_service:
             raise ValueError(
@@ -340,7 +340,7 @@ class ServicePlanBuilder:
 
     def _validate_api_methods(
         self,
-        options: ServicePlanBuilder._ResolvedServiceOptions,
+        options: ServiceModelBuilder._ResolvedServiceOptions,
         lineage_method_specs,
     ) -> None:
         if not options.generate_api:
@@ -358,7 +358,7 @@ class ServicePlanBuilder:
 
     def _validate_service_impl_api_delegate(
         self,
-        options: ServicePlanBuilder._ResolvedServiceOptions,
+        options: ServiceModelBuilder._ResolvedServiceOptions,
         lineage_method_specs,
         api_callable,
     ) -> None:

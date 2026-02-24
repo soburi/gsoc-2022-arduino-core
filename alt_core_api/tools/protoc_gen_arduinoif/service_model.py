@@ -9,11 +9,11 @@ from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 from . import PlannedMethod
 
 __all__ = [
-    "ServicePlan",
+    "ServiceModel",
 ]
 
 
-class ServicePlan(NamedTuple):
+class ServiceModel(NamedTuple):
     include_list: List[str]
     api_includes: List[str]
     service_includes: List[str]
