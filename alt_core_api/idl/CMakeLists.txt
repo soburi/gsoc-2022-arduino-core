@@ -10,15 +10,6 @@ set(ARDUINO_IDL_CLASS_PROTO_FILES
   hardware_serial.proto
 )
 set(ARDUINO_IDL_OPTS_PROTO ${ARDUINO_IDL_PROTO_DIR}/arduino_opts.proto)
-set(ARDUINO_IDL_OPTS_PB2_SCRIPT
-  ${CMAKE_CURRENT_SOURCE_DIR}/../tools/protoc_gen_arduinoif/scripts/regenerate_arduino_opts_pb2.py
-)
-set(ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR
-  ${CMAKE_CURRENT_BINARY_DIR}/generated/protoc_gen_arduinoif
-)
-set(ARDUINO_IDL_OPTS_PB2_OUTPUT
-  ${ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR}/arduino_opts_pb2.py
-)
 set(ARDUINO_IDL_SHARED_PROTO_FILES
   common.proto
 )
@@ -61,27 +52,9 @@ zephyr_nanopb_sources(arduinocore_idl
 )
 
 add_custom_command(
-  OUTPUT ${ARDUINO_IDL_OPTS_PB2_OUTPUT}
-  COMMAND ${CMAKE_COMMAND} -E env
-    PROTOC_GEN_ARDUINOIF_PB2_OUT_DIR=${ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR}
-    /home/crs/zephyrproject/.venv/bin/python ${ARDUINO_IDL_OPTS_PB2_SCRIPT}
-  DEPENDS
-    ${ARDUINO_IDL_OPTS_PROTO}
-    ${ARDUINO_IDL_OPTS_PB2_SCRIPT}
-  COMMENT "Generating arduino_opts_pb2.py from arduino_opts.proto"
-  VERBATIM
-)
-
-add_custom_target(arduinocore_idl_generate_opts_pb2
-  DEPENDS ${ARDUINO_IDL_OPTS_PB2_OUTPUT}
-)
-
-add_custom_command(
   OUTPUT ${ARDUINO_IDL_IF_HEADERS} ${ARDUINO_IDL_TYPE_HEADERS}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARDUINO_IDL_IF_OUTPUT_DIR}
-  COMMAND ${CMAKE_COMMAND} -E env
-    PROTOC_GEN_ARDUINOIF_PB2=${ARDUINO_IDL_OPTS_PB2_OUTPUT}
-    ${PROTOBUF_PROTOC_EXECUTABLE}
+  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
     --plugin=protoc-gen-arduinoif=${ARDUINO_IDL_PLUGIN}
     --arduinoif_out=${ARDUINO_IDL_IF_OUTPUT_DIR}
     --proto_path=${ARDUINO_IDL_PROTO_DIR}
@@ -90,14 +63,12 @@ add_custom_command(
   DEPENDS
     ${ARDUINO_IDL_PLUGIN_INPUT_PROTOS}
     ${ARDUINO_IDL_OPTS_PROTO}
-    ${ARDUINO_IDL_OPTS_PB2_OUTPUT}
     ${ARDUINO_IDL_PLUGIN}
   COMMENT "Generating C++ interface headers from Arduino IDL proto files"
   VERBATIM
 )
 
 add_custom_target(arduinocore_idl_generate_interfaces ALL DEPENDS ${ARDUINO_IDL_IF_HEADERS} ${ARDUINO_IDL_TYPE_HEADERS})
-add_dependencies(arduinocore_idl_generate_interfaces arduinocore_idl_generate_opts_pb2)
 add_dependencies(arduinocore_idl arduinocore_idl_generate_interfaces)
 
 zephyr_include_directories(${ARDUINO_IDL_IF_OUTPUT_DIR})
