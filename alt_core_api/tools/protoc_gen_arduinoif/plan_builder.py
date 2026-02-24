@@ -2,14 +2,7 @@
 
 from __future__ import annotations
 
-import importlib.util
-import os
-import re
-import subprocess
-import tempfile
-import types
 from pathlib import PurePosixPath
-from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Tuple
 
 from google.protobuf.descriptor_pb2 import (
@@ -25,89 +18,6 @@ from .service_plan import ServicePlan
 __all__ = [
     "ServicePlanBuilder",
 ]
-
-
-def _patch_runtime_guard(pb2_path: Path) -> None:
-    text = pb2_path.read_text(encoding="utf-8")
-    import_line = "from google.protobuf import runtime_version as _runtime_version\n"
-    import_guard = (
-        "try:\n"
-        "  from google.protobuf import runtime_version as _runtime_version\n"
-        "except ImportError:\n"
-        "  _runtime_version = None\n"
-    )
-    if import_line in text and import_guard not in text:
-        text = text.replace(import_line, import_guard)
-
-    pattern = re.compile(
-        r"_runtime_version\.ValidateProtobufRuntimeVersion\(\n"
-        r"(?P<body>(?:\s+.*\n)+?)"
-        r"\)\n"
-    )
-    match = pattern.search(text)
-    if match and "if _runtime_version is not None:" not in text:
-        body = "".join(f"  {line}" for line in match.group("body").splitlines(True))
-        wrapped = (
-            "if _runtime_version is not None:\n"
-            "  _runtime_version.ValidateProtobufRuntimeVersion(\n"
-            f"{body}"
-            "  )\n"
-        )
-        text = text[: match.start()] + wrapped + text[match.end() :]
-
-    pb2_path.write_text(text, encoding="utf-8")
-
-
-def _generate_pb2_to_temp() -> Path:
-    proto_dir = Path(__file__).resolve().parents[2] / "idl" / "proto"
-    proto_file = proto_dir / "arduino_opts.proto"
-    cache_dir = Path(tempfile.gettempdir()) / "protoc_gen_arduinoif_pb2"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    pb2_path = cache_dir / "arduino_opts_pb2.py"
-
-    should_generate = True
-    if pb2_path.exists():
-        should_generate = pb2_path.stat().st_mtime < proto_file.stat().st_mtime
-
-    if should_generate:
-        subprocess.run(
-            [
-                "protoc",
-                f"--proto_path={proto_dir}",
-                f"--python_out={cache_dir}",
-                str(proto_file),
-            ],
-            check=True,
-        )
-        _patch_runtime_guard(pb2_path)
-
-    return pb2_path
-
-
-def _load_arduino_opts_pb2() -> types.ModuleType:
-    pb2_path = os.environ.get("PROTOC_GEN_ARDUINOIF_PB2")
-    if pb2_path and Path(pb2_path).exists():
-        module_name = "_protoc_gen_arduinoif_arduino_opts_pb2"
-        spec = importlib.util.spec_from_file_location(module_name, pb2_path)
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"failed to load arduino_opts_pb2 from '{pb2_path}'")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    generated_path = _generate_pb2_to_temp()
-    module_name = "_protoc_gen_arduinoif_arduino_opts_pb2_generated"
-    spec = importlib.util.spec_from_file_location(module_name, generated_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(
-            f"failed to load generated arduino_opts_pb2 '{generated_path}'"
-        )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-arduino_opts_pb2 = _load_arduino_opts_pb2()
 
 
 def _has_extension(options, extension) -> bool:
@@ -151,20 +61,23 @@ class _ResolvedServiceOptions(NamedTuple):
 
 
 class ServicePlanBuilder:
+    _arduino_opts_pb2 = None
+
     class _OptionsView:
-        def __init__(self, options) -> None:
+        def __init__(self, options, arduino_opts_pb2) -> None:
             self._options = options
+            self._arduino_opts_pb2 = arduino_opts_pb2
 
         def string(self, extension_name: str) -> str:
-            extension = getattr(arduino_opts_pb2, extension_name)
+            extension = getattr(self._arduino_opts_pb2, extension_name)
             return _get_string(self._options, extension)
 
         def string_list(self, extension_name: str) -> List[str]:
-            extension = getattr(arduino_opts_pb2, extension_name)
+            extension = getattr(self._arduino_opts_pb2, extension_name)
             return _get_string_list(self._options, extension)
 
         def bool(self, extension_name: str, default: bool = False) -> bool:
-            extension = getattr(arduino_opts_pb2, extension_name)
+            extension = getattr(self._arduino_opts_pb2, extension_name)
             return _get_bool(self._options, extension, default)
 
     _default_types = {
@@ -200,6 +113,16 @@ class ServicePlanBuilder:
         self._service_full_name = RequestContext.full_service_name(
             package_name, service.name
         )
+
+    @classmethod
+    def configure_options_module(cls, arduino_opts_pb2_module) -> None:
+        cls._arduino_opts_pb2 = arduino_opts_pb2_module
+
+    @classmethod
+    def _options_view(cls, options):
+        if cls._arduino_opts_pb2 is None:
+            raise RuntimeError("ServicePlanBuilder options module is not configured")
+        return cls._OptionsView(options, cls._arduino_opts_pb2)
 
     @classmethod
     def build(
@@ -346,7 +269,7 @@ class ServicePlanBuilder:
     def _method_spec_from_descriptor(
         cls, method, message_map: Dict[str, DescriptorProto]
     ) -> MethodSpec:
-        options = cls._OptionsView(method.options)
+        options = cls._options_view(method.options)
         source_virtual = options.bool("source_virtual", True)
         emit_api = options.bool("emit_api", True)
         emit_service = options.bool("emit_service", True)
@@ -384,7 +307,7 @@ class ServicePlanBuilder:
     def _resolved_return_type(
         cls, method, message_map: Dict[str, DescriptorProto]
     ) -> str:
-        return_type = cls._OptionsView(method.options).string("cpp_return").strip()
+        return_type = cls._options_view(method.options).string("cpp_return").strip()
         if return_type:
             return return_type
 
@@ -401,7 +324,7 @@ class ServicePlanBuilder:
 
     @staticmethod
     def _resolved_method_name(method) -> str:
-        method_name = ServicePlanBuilder._OptionsView(method.options).string("cpp_name").strip()
+        method_name = ServicePlanBuilder._options_view(method.options).string("cpp_name").strip()
         if method_name:
             return method_name
         return method.name
@@ -444,14 +367,14 @@ class ServicePlanBuilder:
 
     @classmethod
     def _resolved_field_type(cls, field: FieldDescriptorProto) -> str:
-        param_type = cls._OptionsView(field.options).string("cpp_type").strip()
+        param_type = cls._options_view(field.options).string("cpp_type").strip()
         if param_type:
             return param_type
         return cls._field_type(field)
 
     @staticmethod
     def _resolved_field_name(field: FieldDescriptorProto) -> str:
-        param_name = ServicePlanBuilder._OptionsView(field.options).string("field_cpp_name").strip()
+        param_name = ServicePlanBuilder._options_view(field.options).string("field_cpp_name").strip()
         if param_name:
             return param_name
         return field.name
@@ -461,7 +384,7 @@ class ServicePlanBuilder:
         return cls._default_types.get(field.type, "int32_t")
 
     def _resolve_options(self) -> _ResolvedServiceOptions:
-        options = self._OptionsView(self._service.options)
+        options = self._options_view(self._service.options)
         ifc_name = options.string("ifc_class_name").strip() or f"{self._service.name}Interface"
         api_name = options.string("api_class_name").strip() or f"{self._service.name}Api"
         service_impl_name = (
@@ -539,7 +462,7 @@ class ServicePlanBuilder:
         if entry is None:
             raise ValueError(f"service '{service_full_name}' not found")
         service, package_name = entry
-        base_refs = self._OptionsView(service.options).string_list("base_services")
+        base_refs = self._options_view(service.options).string_list("base_services")
 
         inherited: List[str] = []
         for base_ref in base_refs:
@@ -580,20 +503,20 @@ class ServicePlanBuilder:
         includes: List[str] = []
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
-            includes.extend(self._OptionsView(service.options).string_list("extra_includes"))
+            includes.extend(self._options_view(service.options).string_list("extra_includes"))
         return self._dedupe_ordered(includes)
 
     @staticmethod
     def _service_class_name(service) -> str:
-        return ServicePlanBuilder._OptionsView(service.options).string("service_class_name").strip() or f"{service.name}Service"
+        return ServicePlanBuilder._options_view(service.options).string("service_class_name").strip() or f"{service.name}Service"
 
     @staticmethod
     def _ifc_class_name(service) -> str:
-        return ServicePlanBuilder._OptionsView(service.options).string("ifc_class_name").strip() or f"{service.name}Interface"
+        return ServicePlanBuilder._options_view(service.options).string("ifc_class_name").strip() or f"{service.name}Interface"
 
     @classmethod
     def _service_header_name(cls, service) -> str:
-        header_name = cls._OptionsView(service.options).string("ifc_header_name").strip()
+        header_name = cls._options_view(service.options).string("ifc_header_name").strip()
         if header_name:
             return header_name
         return f"{cls._snake_case(service.name)}_interface.hpp"

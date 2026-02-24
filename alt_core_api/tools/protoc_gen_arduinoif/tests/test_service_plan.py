@@ -21,8 +21,11 @@ from protoc_gen_arduinoif import (  # noqa: E402
     RequestContext,
     ServicePlanBuilder,
 )
+from protoc_gen_arduinoif.core import _load_arduino_opts_pb2  # noqa: E402
 from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
-from protoc_gen_arduinoif.plan_builder import arduino_opts_pb2  # noqa: E402
+
+arduino_opts_pb2 = _load_arduino_opts_pb2()
+ServicePlanBuilder.configure_options_module(arduino_opts_pb2)
 
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
