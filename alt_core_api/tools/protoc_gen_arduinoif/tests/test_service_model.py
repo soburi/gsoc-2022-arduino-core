@@ -17,11 +17,9 @@ from google.protobuf.descriptor_pb2 import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif import (  # noqa: E402
-    RequestContext,
-    ServiceModelBuilder,
-)
 from protoc_gen_arduinoif.core import _load_arduino_opts_pb2  # noqa: E402
+from protoc_gen_arduinoif.request_context import RequestContext  # noqa: E402
+from protoc_gen_arduinoif.service_model_builder import ServiceModelBuilder  # noqa: E402
 from protoc_gen_arduinoif.service_renderer import ServiceRenderer  # noqa: E402
 
 arduino_opts_pb2 = _load_arduino_opts_pb2()
