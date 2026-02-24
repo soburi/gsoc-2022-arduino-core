@@ -21,9 +21,7 @@ class RequestContext(NamedTuple):
     requested_basenames: Set[str]
 
     @classmethod
-    def build(
-        cls, request: plugin_pb2.CodeGeneratorRequest
-    ) -> "RequestContext":
+    def build(cls, request: plugin_pb2.CodeGeneratorRequest) -> "RequestContext":
         message_map: Dict[str, DescriptorProto] = {}
         service_index: Dict[str, Tuple[object, str]] = {}
 
@@ -73,4 +71,6 @@ class RequestContext(NamedTuple):
 
         child_parent = full_name[len(package_prefix) + 1 :]
         for nested in message.nested_type:
-            RequestContext._add_message(message_map, package_prefix, child_parent, nested)
+            RequestContext._add_message(
+                message_map, package_prefix, child_parent, nested
+            )

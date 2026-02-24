@@ -53,8 +53,8 @@ class ServiceRenderer:
 
     def _render_surface(self, surface: str) -> str:
         template, include_attr, method_attr = _SURFACES[surface]
-        public_methods, protected_methods, private_methods = self._group_surface_methods(
-            method_attr
+        public_methods, protected_methods, private_methods = (
+            self._group_surface_methods(method_attr)
         )
 
         return self._render_template(

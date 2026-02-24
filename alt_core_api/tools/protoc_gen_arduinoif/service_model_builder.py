@@ -49,7 +49,9 @@ class ServiceModelBuilder:
         def string_list(self, extension) -> List[str]:
             return [
                 text
-                for text in (str(value).strip() for value in self._options.Extensions[extension])
+                for text in (
+                    str(value).strip() for value in self._options.Extensions[extension]
+                )
                 if text
             ]
 
@@ -88,7 +90,9 @@ class ServiceModelBuilder:
         self._package_name = package_name
         self._proto_enums = proto_enums
         self._context = context
-        self._service_full_name = RequestContext.full_service_name(package_name, service.name)
+        self._service_full_name = RequestContext.full_service_name(
+            package_name, service.name
+        )
 
     @classmethod
     def _options_view(cls, options):
@@ -108,19 +112,28 @@ class ServiceModelBuilder:
         opts_pb2 = get_arduino_opts_pb2()
         service_opts = self._options_view(self._service.options)
 
-        ifc_header = service_opts.string(opts_pb2.ifc_header_name).strip() or f"{self._snake_case(self._service.name)}_interface.hpp"
+        ifc_header = (
+            service_opts.string(opts_pb2.ifc_header_name).strip()
+            or f"{self._snake_case(self._service.name)}_interface.hpp"
+        )
         if ifc_header.endswith("_interface.hpp"):
             stem = ifc_header[: -len("_interface.hpp")]
         else:
             stem = PurePosixPath(ifc_header).stem
 
         options = self._ResolvedServiceOptions(
-            ifc_name=service_opts.string(opts_pb2.ifc_class_name).strip() or f"{self._service.name}Interface",
-            api_name=service_opts.string(opts_pb2.api_class_name).strip() or f"{self._service.name}Api",
-            service_name=service_opts.string(opts_pb2.service_class_name).strip() or f"{self._service.name}Service",
-            service_impl_name=service_opts.string(opts_pb2.service_impl_class_name).strip()
+            ifc_name=service_opts.string(opts_pb2.ifc_class_name).strip()
+            or f"{self._service.name}Interface",
+            api_name=service_opts.string(opts_pb2.api_class_name).strip()
+            or f"{self._service.name}Api",
+            service_name=service_opts.string(opts_pb2.service_class_name).strip()
+            or f"{self._service.name}Service",
+            service_impl_name=service_opts.string(
+                opts_pb2.service_impl_class_name
+            ).strip()
             or f"{self._service.name}ServiceImpl",
-            api_member_name=service_opts.string(opts_pb2.api_member_name).strip() or "api_",
+            api_member_name=service_opts.string(opts_pb2.api_member_name).strip()
+            or "api_",
             generate_api=service_opts.bool(opts_pb2.generate_api_class, False),
             generate_service=service_opts.bool(opts_pb2.generate_service_class, False),
             generate_service_impl=service_opts.bool(
@@ -201,7 +214,9 @@ class ServiceModelBuilder:
             if options.generate_api:
                 service_impl_includes.insert(1, api_header)
 
-        namespace_name = "::".join(part for part in self._package_name.split(".") if part)
+        namespace_name = "::".join(
+            part for part in self._package_name.split(".") if part
+        )
 
         return ServiceModel(
             include_list=include_list,
@@ -253,7 +268,9 @@ class ServiceModelBuilder:
         source_virtual = options.bool(opts_pb2.source_virtual, True)
         emit_api = options.bool(opts_pb2.emit_api, True)
         emit_service = options.bool(opts_pb2.emit_service, True)
-        visibility = options.string(opts_pb2.method_visibility).strip().lower() or "public"
+        visibility = (
+            options.string(opts_pb2.method_visibility).strip().lower() or "public"
+        )
         if visibility not in {"public", "protected", "private"}:
             raise ValueError(
                 f"{method.name}: unsupported method_visibility '{visibility}' "
@@ -264,11 +281,12 @@ class ServiceModelBuilder:
 
         def resolve_field(field: FieldDescriptorProto) -> Tuple[str, str]:
             field_opts = cls._options_view(field.options)
-            field_type = (
-                field_opts.string(opts_pb2.cpp_type).strip()
-                or cls._default_types.get(field.type, "int32_t")
+            field_type = field_opts.string(
+                opts_pb2.cpp_type
+            ).strip() or cls._default_types.get(field.type, "int32_t")
+            field_name = (
+                field_opts.string(opts_pb2.field_cpp_name).strip() or field.name
             )
-            field_name = field_opts.string(opts_pb2.field_cpp_name).strip() or field.name
             return field_type, field_name
 
         return_type = options.string(opts_pb2.cpp_return).strip()
@@ -435,9 +453,13 @@ class ServiceModelBuilder:
     def _snake_case(name: str) -> str:
         chars: List[str] = []
         for index, char in enumerate(name):
-            if char.isupper() and index > 0 and (
-                not name[index - 1].isupper()
-                or (index + 1 < len(name) and name[index + 1].islower())
+            if (
+                char.isupper()
+                and index > 0
+                and (
+                    not name[index - 1].isupper()
+                    or (index + 1 < len(name) and name[index + 1].islower())
+                )
             ):
                 chars.append("_")
             chars.append(char.lower())
@@ -458,7 +480,8 @@ class ServiceModelBuilder:
                     in_ifc=spec.decl in own_virtual_decls,
                     in_api=spec.emit_api and spec.source_virtual,
                     in_service=in_service,
-                    in_service_impl=in_service and spec.call_name in service_impl_callable,
+                    in_service_impl=in_service
+                    and spec.call_name in service_impl_callable,
                 )
             )
         return methods
