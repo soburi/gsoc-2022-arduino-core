@@ -30,6 +30,12 @@ class RequestContext(NamedTuple):
     ) -> "RequestContext":
         return build_request_context(request)
 
+    @staticmethod
+    def full_service_name(package_name: str, service_name: str) -> str:
+        if package_name:
+            return f".{package_name}.{service_name}"
+        return f".{service_name}"
+
     def is_requested_proto(self, proto_name: str) -> bool:
         proto_basename = PurePosixPath(proto_name).name
         return (
@@ -51,7 +57,9 @@ class _RequestContextBuilder:
             for message in proto_file.message_type:
                 self._add_message(message_map, prefix, "", message)
             for service in proto_file.service:
-                full_name = full_service_name(proto_file.package, service.name)
+                full_name = RequestContext.full_service_name(
+                    proto_file.package, service.name
+                )
                 service_index[full_name] = (service, proto_file.package)
 
         requested_files = set(self._request.file_to_generate)
@@ -85,9 +93,7 @@ class _RequestContextBuilder:
 
 
 def full_service_name(package_name: str, service_name: str) -> str:
-    if package_name:
-        return f".{package_name}.{service_name}"
-    return f".{service_name}"
+    return RequestContext.full_service_name(package_name, service_name)
 
 
 def build_request_context(

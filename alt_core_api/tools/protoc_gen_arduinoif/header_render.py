@@ -16,14 +16,6 @@ __all__ = [
     "render_service_impl_header_content",
 ]
 
-
-def _class_decl(class_name: str, base_classes: List[str]) -> str:
-    if not base_classes:
-        return f"class {class_name} {{"
-    bases = ", ".join(f"public {base_class}" for base_class in base_classes)
-    return f"class {class_name} : {bases} {{"
-
-
 class _ServicePlanRenderer:
     def __init__(self, plan: ServicePlan) -> None:
         self._plan = plan
@@ -66,7 +58,7 @@ class _ServicePlanRenderer:
     def render_service_header_content(self) -> str:
         body_lines: List[str] = []
         body_lines.append(
-            _class_decl(
+            self._class_decl(
                 self._plan.service_name,
                 self._plan.service_base_ifc_class_names,
             )
@@ -181,6 +173,13 @@ class _ServicePlanRenderer:
             body_lines.append("private:")
             for spec in private_methods:
                 emit_method(spec)
+
+    @staticmethod
+    def _class_decl(class_name: str, base_classes: List[str]) -> str:
+        if not base_classes:
+            return f"class {class_name} {{"
+        bases = ", ".join(f"public {base_class}" for base_class in base_classes)
+        return f"class {class_name} : {bases} {{"
 
     @staticmethod
     def _append_forwarding_method(
