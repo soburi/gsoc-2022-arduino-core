@@ -2,15 +2,9 @@
 
 from __future__ import annotations
 
-import importlib.util
-import os
-import re
-import subprocess
 import sys
-import tempfile
 import types
-from pathlib import Path
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
@@ -25,81 +19,79 @@ __all__ = [
 ]
 
 
-def _patch_runtime_guard(pb2_path: Path) -> None:
-    text = pb2_path.read_text(encoding="utf-8")
-    import_line = "from google.protobuf import runtime_version as _runtime_version\n"
-    import_guard = (
-        "try:\n"
-        "  from google.protobuf import runtime_version as _runtime_version\n"
-        "except ImportError:\n"
-        "  _runtime_version = None\n"
-    )
-    if import_line in text and import_guard not in text:
-        text = text.replace(import_line, import_guard)
-
-    pattern = re.compile(
-        r"_runtime_version\.ValidateProtobufRuntimeVersion\(\n"
-        r"(?P<body>(?:\s+.*\n)+?)"
-        r"\)\n"
-    )
-    match = pattern.search(text)
-    if match and "if _runtime_version is not None:" not in text:
-        body = "".join(f"  {line}" for line in match.group("body").splitlines(True))
-        wrapped = (
-            "if _runtime_version is not None:\n"
-            "  _runtime_version.ValidateProtobufRuntimeVersion(\n"
-            f"{body}"
-            "  )\n"
-        )
-        text = text[: match.start()] + wrapped + text[match.end() :]
-
-    pb2_path.write_text(text, encoding="utf-8")
-
-
-def _generate_pb2_to_temp() -> Path:
-    proto_dir = Path(__file__).resolve().parents[2] / "idl" / "proto"
-    proto_file = proto_dir / "arduino_opts.proto"
-    cache_dir = Path(tempfile.gettempdir()) / "protoc_gen_arduinoif_pb2"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    pb2_path = cache_dir / "arduino_opts_pb2.py"
-
-    should_generate = True
-    if pb2_path.exists():
-        should_generate = pb2_path.stat().st_mtime < proto_file.stat().st_mtime
-
-    if should_generate:
-        subprocess.run(
-            [
-                "protoc",
-                f"--proto_path={proto_dir}",
-                f"--python_out={cache_dir}",
-                str(proto_file),
-            ],
-            check=True,
-        )
-        _patch_runtime_guard(pb2_path)
-
-    return pb2_path
-
-
 def _load_arduino_opts_pb2() -> types.ModuleType:
+    import importlib.util
+    import os
+    import re
+    import subprocess
+    import tempfile
+
+    def patch_runtime_guard(pb2_path: Path) -> None:
+        text = pb2_path.read_text(encoding="utf-8")
+        import_line = "from google.protobuf import runtime_version as _runtime_version\n"
+        import_guard = (
+            "try:\n"
+            "  from google.protobuf import runtime_version as _runtime_version\n"
+            "except ImportError:\n"
+            "  _runtime_version = None\n"
+        )
+        if import_line in text and import_guard not in text:
+            text = text.replace(import_line, import_guard)
+
+        pattern = re.compile(
+            r"_runtime_version\.ValidateProtobufRuntimeVersion\(\n"
+            r"(?P<body>(?:\s+.*\n)+?)"
+            r"\)\n"
+        )
+        match = pattern.search(text)
+        if match and "if _runtime_version is not None:" not in text:
+            body = "".join(f"  {line}" for line in match.group("body").splitlines(True))
+            wrapped = (
+                "if _runtime_version is not None:\n"
+                "  _runtime_version.ValidateProtobufRuntimeVersion(\n"
+                f"{body}"
+                "  )\n"
+            )
+            text = text[: match.start()] + wrapped + text[match.end() :]
+
+        pb2_path.write_text(text, encoding="utf-8")
+
+    def generate_pb2_to_temp() -> Path:
+        proto_dir = Path(__file__).resolve().parents[2] / "idl" / "proto"
+        proto_file = proto_dir / "arduino_opts.proto"
+        cache_dir = Path(tempfile.gettempdir()) / "protoc_gen_arduinoif_pb2"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        pb2_path = cache_dir / "arduino_opts_pb2.py"
+
+        should_generate = True
+        if pb2_path.exists():
+            should_generate = pb2_path.stat().st_mtime < proto_file.stat().st_mtime
+
+        if should_generate:
+            subprocess.run(
+                [
+                    "protoc",
+                    f"--proto_path={proto_dir}",
+                    f"--python_out={cache_dir}",
+                    str(proto_file),
+                ],
+                check=True,
+            )
+            patch_runtime_guard(pb2_path)
+
+        return pb2_path
+
     pb2_path = os.environ.get("PROTOC_GEN_ARDUINOIF_PB2")
     if pb2_path and Path(pb2_path).exists():
+        source_path = Path(pb2_path)
         module_name = "_protoc_gen_arduinoif_arduino_opts_pb2"
-        spec = importlib.util.spec_from_file_location(module_name, pb2_path)
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"failed to load arduino_opts_pb2 from '{pb2_path}'")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+    else:
+        source_path = generate_pb2_to_temp()
+        module_name = "_protoc_gen_arduinoif_arduino_opts_pb2_generated"
 
-    generated_path = _generate_pb2_to_temp()
-    module_name = "_protoc_gen_arduinoif_arduino_opts_pb2_generated"
-    spec = importlib.util.spec_from_file_location(module_name, generated_path)
+    spec = importlib.util.spec_from_file_location(module_name, source_path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(
-            f"failed to load generated arduino_opts_pb2 '{generated_path}'"
-        )
+        raise RuntimeError(f"failed to load arduino_opts_pb2 from '{source_path}'")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -118,7 +110,7 @@ def _iter_generated_files(
 
         if proto_file.enum_type and not proto_file.service:
             yield (
-                _types_header_name_for_proto(proto_file.name),
+                f"{PurePosixPath(proto_file.name).stem}_types.h",
                 _render_enum_header(list(proto_file.enum_type)),
             )
 
@@ -132,39 +124,34 @@ def _iter_generated_files(
             yield from ServicePlanRenderer(service_plan).iter_headers()
 
 
-def _types_header_name_for_proto(proto_file_name: str) -> str:
-    return f"{PurePosixPath(proto_file_name).stem}_types.h"
-
-
 def _render_enum_header(enums: list[EnumDescriptorProto]) -> str:
-    lines: list[str] = []
-    lines.append("// Generated by protoc-gen-arduinoif. DO NOT EDIT.")
-    lines.append("")
-    lines.append("#pragma once")
-    lines.append("")
-    lines.append("#include <stdint.h>")
-    lines.append("")
+    lines = [
+        "// Generated by protoc-gen-arduinoif. DO NOT EDIT.",
+        "",
+        "#pragma once",
+        "",
+        "#include <stdint.h>",
+        "",
+    ]
 
     for enum_desc in enums:
-        lines.append(f"typedef enum {enum_desc.name} {{")
-        for value in enum_desc.value:
-            lines.append(f"  {value.name} = {value.number},")
-        lines.append(f"}} {enum_desc.name};")
-        lines.append("")
+        lines.extend([f"typedef enum {enum_desc.name} {{"])
+        lines.extend(f"  {value.name} = {value.number}," for value in enum_desc.value)
+        lines.extend([f"}} {enum_desc.name};", ""])
 
-    while lines and lines[-1] == "":
+    while lines[-1] == "":
         lines.pop()
     lines.append("")
     return "\n".join(lines)
 
 
 def main() -> int:
+    arduino_opts_pb2 = _load_arduino_opts_pb2()
     request = plugin_pb2.CodeGeneratorRequest()
     request.ParseFromString(sys.stdin.buffer.read())
     response = plugin_pb2.CodeGeneratorResponse()
 
     try:
-        arduino_opts_pb2 = _load_arduino_opts_pb2()
         for name, content in _iter_generated_files(request, arduino_opts_pb2):
             output = response.file.add()
             output.name = name

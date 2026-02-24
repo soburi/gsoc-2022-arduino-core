@@ -38,6 +38,9 @@ class ServicePlanBuilder:
             self._options = options
             self._arduino_opts_pb2 = arduino_opts_pb2
 
+        def _ext(self, extension_name: str):
+            return getattr(self._arduino_opts_pb2, extension_name)
+
         def _has_extension(self, extension) -> bool:
             try:
                 return self._options.HasExtension(extension)
@@ -45,23 +48,21 @@ class ServicePlanBuilder:
                 return False
 
         def string(self, extension_name: str) -> str:
-            extension = getattr(self._arduino_opts_pb2, extension_name)
+            extension = self._ext(extension_name)
             if not self._has_extension(extension):
                 return ""
-            value = self._options.Extensions[extension]
-            return str(value)
+            return str(self._options.Extensions[extension])
 
         def string_list(self, extension_name: str) -> List[str]:
-            extension = getattr(self._arduino_opts_pb2, extension_name)
-            values: List[str] = []
-            for value in self._options.Extensions[extension]:
-                text = str(value).strip()
-                if text:
-                    values.append(text)
-            return values
+            extension = self._ext(extension_name)
+            return [
+                text
+                for text in (str(value).strip() for value in self._options.Extensions[extension])
+                if text
+            ]
 
         def bool(self, extension_name: str, default: bool = False) -> bool:
-            extension = getattr(self._arduino_opts_pb2, extension_name)
+            extension = self._ext(extension_name)
             if not self._has_extension(extension):
                 return default
             return bool(self._options.Extensions[extension])
@@ -96,9 +97,7 @@ class ServicePlanBuilder:
         self._package_name = package_name
         self._proto_enums = proto_enums
         self._context = context
-        self._service_full_name = RequestContext.full_service_name(
-            package_name, service.name
-        )
+        self._service_full_name = RequestContext.full_service_name(package_name, service.name)
 
     @classmethod
     def configure_options_module(cls, arduino_opts_pb2_module) -> None:
@@ -118,76 +117,84 @@ class ServicePlanBuilder:
         proto_enums: List[EnumDescriptorProto],
         context: RequestContext,
     ) -> ServicePlan:
-        return cls(
-            service,
-            package_name,
-            proto_enums,
-            context,
-        )._build()
+        return cls(service, package_name, proto_enums, context)._build()
 
     def _build(self) -> ServicePlan:
-        options = self._resolve_options()
+        service_opts = self._options_view(self._service.options)
+
+        ifc_header = service_opts.string("ifc_header_name").strip() or f"{self._snake_case(self._service.name)}_interface.hpp"
+        if ifc_header.endswith("_interface.hpp"):
+            stem = ifc_header[: -len("_interface.hpp")]
+        else:
+            stem = PurePosixPath(ifc_header).stem
+
+        options = self._ResolvedServiceOptions(
+            ifc_name=service_opts.string("ifc_class_name").strip() or f"{self._service.name}Interface",
+            api_name=service_opts.string("api_class_name").strip() or f"{self._service.name}Api",
+            service_name=service_opts.string("service_class_name").strip() or f"{self._service.name}Service",
+            service_impl_name=service_opts.string("service_impl_class_name").strip()
+            or f"{self._service.name}ServiceImpl",
+            api_member_name=service_opts.string("api_member_name").strip() or "api_",
+            generate_api=service_opts.bool("generate_api_class", False),
+            generate_service=service_opts.bool("generate_service_class", False),
+            generate_service_impl=service_opts.bool("generate_service_impl_class", False),
+        )
         self._validate_generation_flags(options)
 
-        own_method_specs = self._collect_lineage_methods(
+        lineage = self._collect_service_lineage(self._service_full_name)
+        own_specs = self._collect_lineage_methods(
             [self._service_full_name],
             self._context.service_index,
             self._context.message_map,
         )
-        lineage = self._collect_service_lineage(self._service_full_name)
-        ancestor_services = lineage[:-1]
-        lineage_method_specs = self._collect_lineage_methods(
+        lineage_specs = self._collect_lineage_methods(
             lineage,
             self._context.service_index,
             self._context.message_map,
         )
-        own_virtual_decls = {
-            spec.decl for spec in own_method_specs if spec.source_virtual
-        }
+
+        own_virtual_decls = {spec.decl for spec in own_specs if spec.source_virtual}
         api_callable = {
             spec.call_name
-            for spec in lineage_method_specs
+            for spec in lineage_specs
             if spec.emit_api and spec.source_virtual
         }
         service_callable = {
-            spec.call_name for spec in lineage_method_specs if spec.emit_service
+            spec.call_name for spec in lineage_specs if spec.emit_service
         }
 
-        self._validate_api_methods(options, lineage_method_specs)
-        self._validate_service_impl_api_delegate(
-            options, lineage_method_specs, api_callable
-        )
+        self._validate_api_methods(options, lineage_specs)
+        self._validate_service_impl_api_delegate(options, lineage_specs, api_callable)
 
         service_impl_callable = (
             api_callable
             if (options.generate_service_impl and options.generate_api)
             else service_callable
         )
-
         methods = self._build_planned_methods(
-            lineage_method_specs,
+            lineage_specs,
             own_virtual_decls,
             service_impl_callable,
         )
 
-        include_list = self._dedupe_ordered(self._collect_lineage_includes(lineage))
-        service_base_ifc_class_names: List[str] = []
-        service_base_ifc_header_names: List[str] = []
-        for ancestor_full_name in ancestor_services:
-            ancestor_service, _ = self._context.service_index[ancestor_full_name]
-            service_base_ifc_class_names.append(self._ifc_class_name(ancestor_service))
-            service_base_ifc_header_names.append(
-                self._service_header_name(ancestor_service)
-            )
-        service_base_ifc_class_names = self._dedupe_ordered(
-            service_base_ifc_class_names
-        )
-        service_base_ifc_header_names = self._dedupe_ordered(
-            service_base_ifc_header_names
-        )
+        include_list = list(dict.fromkeys(self._collect_lineage_includes(lineage)))
 
-        stem = self._service_header_stem(self._service)
-        ifc_header = self._service_header_name(self._service)
+        base_ifc_names: List[str] = []
+        base_ifc_headers: List[str] = []
+        for ancestor_full_name in lineage[:-1]:
+            ancestor_service, _ = self._context.service_index[ancestor_full_name]
+            ancestor_opts = self._options_view(ancestor_service.options)
+            base_ifc_names.append(
+                ancestor_opts.string("ifc_class_name").strip()
+                or f"{ancestor_service.name}Interface"
+            )
+            base_ifc_headers.append(
+                ancestor_opts.string("ifc_header_name").strip()
+                or f"{self._snake_case(ancestor_service.name)}_interface.hpp"
+            )
+        base_ifc_names = list(dict.fromkeys(base_ifc_names))
+        base_ifc_headers = list(dict.fromkeys(base_ifc_headers))
+
         api_header = f"{stem}_api.hpp"
         service_header = f"{stem}_service.hpp"
         service_impl_header = f"{stem}_service_impl.hpp"
@@ -196,13 +203,9 @@ class ServicePlanBuilder:
 
         service_includes: List[str] = []
         if options.generate_service:
-            service_includes = self._dedupe_ordered(
-                [*service_base_ifc_header_names, *include_list]
-            )
+            service_includes = list(dict.fromkeys([*base_ifc_headers, *include_list]))
             if self._proto_enums:
-                service_includes = self._dedupe_ordered(
-                    [ifc_header, *service_includes]
-                )
+                service_includes = list(dict.fromkeys([ifc_header, *service_includes]))
 
         service_impl_includes: List[str] = []
         if options.generate_service_impl:
@@ -222,7 +225,7 @@ class ServicePlanBuilder:
             service_name=options.service_name,
             service_impl_name=options.service_impl_name,
             api_member_name=options.api_member_name,
-            service_base_ifc_class_names=service_base_ifc_class_names,
+            service_base_ifc_class_names=base_ifc_names,
             ifc_header=ifc_header,
             api_header=api_header,
             service_header=service_header,
@@ -241,19 +244,19 @@ class ServicePlanBuilder:
         message_map: Dict[str, DescriptorProto],
     ) -> List[MethodSpec]:
         by_decl: Dict[str, MethodSpec] = {}
-
         for service_full_name in lineage:
             service, _ = service_index[service_full_name]
             for method in service.method:
                 spec = cls._method_spec_from_descriptor(method, message_map)
                 by_decl.pop(spec.decl, None)
                 by_decl[spec.decl] = spec
-
         return list(by_decl.values())
 
     @classmethod
     def _method_spec_from_descriptor(
-        cls, method, message_map: Dict[str, DescriptorProto]
+        cls,
+        method,
+        message_map: Dict[str, DescriptorProto],
     ) -> MethodSpec:
         options = cls._options_view(method.options)
         source_virtual = options.bool("source_virtual", True)
@@ -266,132 +269,69 @@ class ServicePlanBuilder:
                 "(expected: public, protected, private)"
             )
 
-        method_name = cls._resolved_method_name(method)
-        return_type = cls._resolved_return_type(method, message_map)
+        method_name = options.string("cpp_name").strip() or method.name
 
-        arg_types = options.string_list("cpp_arg_types")
-        if arg_types:
-            param_decls, arg_names = cls._build_option_params(arg_types)
-        else:
-            input_message = message_map.get(method.input_type)
-            param_decls, arg_names = cls._build_input_params(input_message)
+        def resolve_field(field: FieldDescriptorProto) -> Tuple[str, str]:
+            field_opts = cls._options_view(field.options)
+            field_type = (
+                field_opts.string("cpp_type").strip()
+                or cls._default_types.get(field.type, "int32_t")
+            )
+            field_name = field_opts.string("field_cpp_name").strip() or field.name
+            return field_type, field_name
 
-        decl = cls._build_decl(return_type, method_name, param_decls)
-        return MethodSpec(
-            decl,
-            method_name,
-            arg_names,
-            "",
-            return_type == "void",
-            source_virtual,
-            emit_api,
-            emit_service,
-            visibility,
-        )
+        return_type = options.string("cpp_return").strip()
+        if not return_type:
+            output_message = message_map.get(method.output_type)
+            if output_message is None:
+                return_type = "void"
+            else:
+                output_fields = sorted(output_message.field, key=lambda f: f.number)
+                return_type = (
+                    resolve_field(output_fields[0])[0]
+                    if len(output_fields) == 1
+                    else "void"
+                )
 
-    @classmethod
-    def _resolved_return_type(
-        cls, method, message_map: Dict[str, DescriptorProto]
-    ) -> str:
-        return_type = cls._options_view(method.options).string("cpp_return").strip()
-        if return_type:
-            return return_type
-
-        output_message = message_map.get(method.output_type)
-        if output_message is None:
-            return "void"
-
-        ordered_fields = sorted(output_message.field, key=lambda field: field.number)
-        if len(ordered_fields) == 0:
-            return "void"
-        if len(ordered_fields) == 1:
-            return cls._resolved_field_type(ordered_fields[0])
-        return "void"
-
-    @staticmethod
-    def _resolved_method_name(method) -> str:
-        method_name = ServicePlanBuilder._options_view(method.options).string("cpp_name").strip()
-        if method_name:
-            return method_name
-        return method.name
-
-    @staticmethod
-    def _build_decl(
-        return_type: str, method_name: str, param_decls: List[str]
-    ) -> str:
-        params_blob = ", ".join(param_decls)
-        if method_name.startswith("operator "):
-            return f"{method_name}({params_blob})"
-        return f"{return_type} {method_name}({params_blob})"
-
-    @classmethod
-    def _build_input_params(
-        cls,
-        input_message: DescriptorProto | None,
-    ) -> Tuple[List[str], List[str]]:
         arg_names: List[str] = []
         param_decls: List[str] = []
-        if input_message is None:
-            return param_decls, arg_names
+        arg_types = options.string_list("cpp_arg_types")
+        if arg_types:
+            arg_names = [f"arg{index}" for index in range(len(arg_types))]
+            param_decls = [
+                f"{arg_type} {arg_name}"
+                for arg_type, arg_name in zip(arg_types, arg_names)
+            ]
+        else:
+            input_message = message_map.get(method.input_type)
+            if input_message is not None:
+                for field in sorted(input_message.field, key=lambda f: f.number):
+                    field_type, field_name = resolve_field(field)
+                    param_decls.append(f"{field_type} {field_name}")
+                    arg_names.append(field_name)
 
-        ordered_fields = sorted(input_message.field, key=lambda field: field.number)
-        for field in ordered_fields:
-            param_type = cls._resolved_field_type(field)
-            param_name = cls._resolved_field_name(field)
-            param_decls.append(f"{param_type} {param_name}")
-            arg_names.append(param_name)
-        return param_decls, arg_names
-
-    @staticmethod
-    def _build_option_params(arg_types: List[str]) -> Tuple[List[str], List[str]]:
-        arg_names = [f"arg{index}" for index in range(len(arg_types))]
-        param_decls = [
-            f"{arg_type} {arg_name}"
-            for arg_type, arg_name in zip(arg_types, arg_names)
-        ]
-        return param_decls, arg_names
-
-    @classmethod
-    def _resolved_field_type(cls, field: FieldDescriptorProto) -> str:
-        param_type = cls._options_view(field.options).string("cpp_type").strip()
-        if param_type:
-            return param_type
-        return cls._field_type(field)
-
-    @staticmethod
-    def _resolved_field_name(field: FieldDescriptorProto) -> str:
-        param_name = ServicePlanBuilder._options_view(field.options).string("field_cpp_name").strip()
-        if param_name:
-            return param_name
-        return field.name
-
-    @classmethod
-    def _field_type(cls, field: FieldDescriptorProto) -> str:
-        return cls._default_types.get(field.type, "int32_t")
-
-    def _resolve_options(self) -> ServicePlanBuilder._ResolvedServiceOptions:
-        options = self._options_view(self._service.options)
-        ifc_name = options.string("ifc_class_name").strip() or f"{self._service.name}Interface"
-        api_name = options.string("api_class_name").strip() or f"{self._service.name}Api"
-        service_impl_name = (
-            options.string("service_impl_class_name").strip()
-            or f"{self._service.name}ServiceImpl"
+        params_blob = ", ".join(param_decls)
+        decl = (
+            f"{method_name}({params_blob})"
+            if method_name.startswith("operator ")
+            else f"{return_type} {method_name}({params_blob})"
         )
-        api_member_name = options.string("api_member_name").strip() or "api_"
 
-        return self._ResolvedServiceOptions(
-            ifc_name=ifc_name,
-            api_name=api_name,
-            service_name=self._service_class_name(self._service),
-            service_impl_name=service_impl_name,
-            api_member_name=api_member_name,
-            generate_api=options.bool("generate_api_class", False),
-            generate_service=options.bool("generate_service_class", False),
-            generate_service_impl=options.bool("generate_service_impl_class", False),
+        return MethodSpec(
+            decl=decl,
+            call_name=method_name,
+            arg_names=arg_names,
+            suffix="",
+            returns_void=(return_type == "void"),
+            source_virtual=source_virtual,
+            emit_api=emit_api,
+            emit_service=emit_service,
+            visibility=visibility,
         )
 
     def _validate_generation_flags(
-        self, options: ServicePlanBuilder._ResolvedServiceOptions
+        self,
+        options: ServicePlanBuilder._ResolvedServiceOptions,
     ) -> None:
         if options.generate_service_impl and not options.generate_service:
             raise ValueError(
@@ -451,11 +391,10 @@ class ServicePlanBuilder:
         entry = self._context.service_index.get(service_full_name)
         if entry is None:
             raise ValueError(f"service '{service_full_name}' not found")
-        service, package_name = entry
-        base_refs = self._options_view(service.options).string_list("base_services")
 
+        service, package_name = entry
         inherited: List[str] = []
-        for base_ref in base_refs:
+        for base_ref in self._options_view(service.options).string_list("base_services"):
             base_full_name = self._resolve_service_reference(base_ref, package_name)
             inherited.extend(
                 self._collect_service_lineage(
@@ -463,8 +402,8 @@ class ServicePlanBuilder:
                     [*visiting, service_full_name],
                 )
             )
-        inherited.append(service_full_name)
-        lineage = self._dedupe_ordered(inherited)
+
+        lineage = list(dict.fromkeys([*inherited, service_full_name]))
         self._context.lineage_cache[service_full_name] = lineage
         return lineage
 
@@ -482,42 +421,18 @@ class ServicePlanBuilder:
         else:
             candidate = f".{reference}"
 
-        if candidate in self._context.service_index:
-            return candidate
-
-        raise ValueError(
-            f"service '{candidate}' not found for base_services entry '{reference}'"
-        )
+        if candidate not in self._context.service_index:
+            raise ValueError(
+                f"service '{candidate}' not found for base_services entry '{reference}'"
+            )
+        return candidate
 
     def _collect_lineage_includes(self, lineage: List[str]) -> List[str]:
         includes: List[str] = []
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
             includes.extend(self._options_view(service.options).string_list("extra_includes"))
-        return self._dedupe_ordered(includes)
-
-    @staticmethod
-    def _service_class_name(service) -> str:
-        return ServicePlanBuilder._options_view(service.options).string("service_class_name").strip() or f"{service.name}Service"
-
-    @staticmethod
-    def _ifc_class_name(service) -> str:
-        return ServicePlanBuilder._options_view(service.options).string("ifc_class_name").strip() or f"{service.name}Interface"
-
-    @classmethod
-    def _service_header_name(cls, service) -> str:
-        header_name = cls._options_view(service.options).string("ifc_header_name").strip()
-        if header_name:
-            return header_name
-        return f"{cls._snake_case(service.name)}_interface.hpp"
-
-    @classmethod
-    def _service_header_stem(cls, service) -> str:
-        ifc_header = cls._service_header_name(service)
-        suffix = "_interface.hpp"
-        if ifc_header.endswith(suffix):
-            return ifc_header[: -len(suffix)]
-        return PurePosixPath(ifc_header).stem
+        return includes
 
     @staticmethod
     def _cpp_namespace_from_package(package_name: str) -> str:
@@ -536,17 +451,6 @@ class ServicePlanBuilder:
         return "".join(chars)
 
     @staticmethod
-    def _dedupe_ordered(items: List[str]) -> List[str]:
-        seen = set()
-        result: List[str] = []
-        for item in items:
-            if item in seen:
-                continue
-            seen.add(item)
-            result.append(item)
-        return result
-
-    @staticmethod
     def _build_planned_methods(
         lineage_method_specs,
         own_virtual_decls,
@@ -554,16 +458,14 @@ class ServicePlanBuilder:
     ) -> List[PlannedMethod]:
         methods: List[PlannedMethod] = []
         for spec in lineage_method_specs:
-            in_ifc = spec.decl in own_virtual_decls
             in_service = spec.emit_service
             methods.append(
                 PlannedMethod(
                     spec=spec,
-                    in_ifc=in_ifc,
+                    in_ifc=spec.decl in own_virtual_decls,
                     in_api=spec.emit_api and spec.source_virtual,
                     in_service=in_service,
-                    in_service_impl=in_service
-                    and spec.call_name in service_impl_callable,
+                    in_service_impl=in_service and spec.call_name in service_impl_callable,
                 )
             )
         return methods

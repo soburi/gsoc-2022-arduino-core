@@ -11,13 +11,15 @@ from google.protobuf.descriptor_pb2 import (
     DescriptorProto,
     FieldDescriptorProto,
     FileDescriptorSet,
+    MethodDescriptorProto,
+    ServiceDescriptorProto,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
+from protoc_gen_arduinoif import RequestContext, ServicePlanBuilder  # noqa: E402
 from protoc_gen_arduinoif.core import _load_arduino_opts_pb2  # noqa: E402
-from protoc_gen_arduinoif.plan_builder import ServicePlanBuilder  # noqa: E402
 
 arduino_opts_pb2 = _load_arduino_opts_pb2()
 ServicePlanBuilder.configure_options_module(arduino_opts_pb2)
@@ -34,15 +36,18 @@ def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
         "common.proto",
     ]
 
-    command = [
-        "protoc",
-        f"--descriptor_set_out={descriptor_path}",
-        "--include_imports",
-        f"--proto_path={proto_dir}",
-        f"--proto_path={google_dir}",
-        *proto_files,
-    ]
-    subprocess.run(command, cwd=REPO_ROOT, check=True)
+    subprocess.run(
+        [
+            "protoc",
+            f"--descriptor_set_out={descriptor_path}",
+            "--include_imports",
+            f"--proto_path={proto_dir}",
+            f"--proto_path={google_dir}",
+            *proto_files,
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+    )
 
     descriptor_set = FileDescriptorSet()
     descriptor_set.ParseFromString(descriptor_path.read_bytes())
@@ -53,49 +58,65 @@ def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
     return request
 
 
-def test_method_and_service_options_from_extensions(tmp_path: Path) -> None:
+def test_builder_reads_service_and_method_extensions(tmp_path: Path) -> None:
     request = _build_request(tmp_path)
+    context = RequestContext.build(request)
+
     hardware_serial_file = next(
         proto_file
         for proto_file in request.proto_file
         if proto_file.name == "hardware_serial.proto"
     )
-    service = next(
-        descriptor
-        for descriptor in hardware_serial_file.service
-        if descriptor.name == "HardwareSerial"
+    service = next(s for s in hardware_serial_file.service if s.name == "HardwareSerial")
+
+    plan = ServicePlanBuilder.build(
+        service,
+        hardware_serial_file.package,
+        list(hardware_serial_file.enum_type),
+        context,
     )
-    begin_baud = next(method for method in service.method if method.name == "BeginBaud")
 
-    service_opts = ServicePlanBuilder._options_view(service.options)
-    method_opts = ServicePlanBuilder._options_view(begin_baud.options)
+    assert plan.generate_api is True
+    assert plan.api_name == "arduino::HardwareSerial"
 
-    assert service_opts.bool("generate_api_class", False) is True
-    assert service_opts.string_list("base_services") == ["Stream"]
-    assert service_opts.string("api_class_name") == "arduino::HardwareSerial"
-
-    assert method_opts.string("cpp_name") == "begin"
-    assert method_opts.string("cpp_return") == ""
-    assert method_opts.string_list("cpp_arg_types") == ["unsigned long"]
-    assert method_opts.string("method_visibility") == ""
-    assert method_opts.bool("source_virtual", True) is True
-    assert method_opts.bool("emit_api", True) is True
-    assert method_opts.bool("emit_service", True) is True
+    ifc_decls = [planned.spec.decl for planned in plan.methods if planned.in_ifc]
+    assert "void begin(unsigned long arg0)" in ifc_decls
+    assert "void begin(unsigned long arg0, uint16_t arg1)" in ifc_decls
 
 
-def test_field_option_accessors() -> None:
-    message = DescriptorProto(name="Sample")
-    field = message.field.add()
+def test_builder_reads_field_extensions_from_input_message() -> None:
+    input_message = DescriptorProto(name="Input")
+    field = input_message.field.add()
     field.name = "value"
     field.number = 1
     field.type = FieldDescriptorProto.TYPE_UINT32
-
-    field_opts = ServicePlanBuilder._options_view(field.options)
-    assert field_opts.string("cpp_type") == ""
-    assert field_opts.string("field_cpp_name") == ""
-
     field.options.Extensions[arduino_opts_pb2.cpp_type] = "uint8_t"
     field.options.Extensions[arduino_opts_pb2.field_cpp_name] = "input_value"
 
-    assert field_opts.string("cpp_type") == "uint8_t"
-    assert field_opts.string("field_cpp_name") == "input_value"
+    empty_message = DescriptorProto(name="Empty")
+
+    method = MethodDescriptorProto(
+        name="Foo",
+        input_type=".test.Input",
+        output_type=".test.Empty",
+    )
+    service = ServiceDescriptorProto(name="Sample")
+    service.method.extend([method])
+
+    context = RequestContext(
+        message_map={
+            ".test.Input": input_message,
+            ".test.Empty": empty_message,
+        },
+        service_index={
+            ".test.Sample": (service, "test"),
+        },
+        lineage_cache={},
+        requested_files=set(),
+        requested_basenames=set(),
+    )
+
+    plan = ServicePlanBuilder.build(service, "test", [], context)
+    ifc_specs = [planned.spec for planned in plan.methods if planned.in_ifc]
+    assert len(ifc_specs) == 1
+    assert ifc_specs[0].decl == "void Foo(uint8_t input_value)"
