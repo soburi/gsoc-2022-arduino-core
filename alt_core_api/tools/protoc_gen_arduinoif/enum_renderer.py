@@ -17,7 +17,7 @@ class EnumRenderer:
         self._proto_name = proto_name
         self._enums = enums
 
-    def iter_headers(self) -> Iterator[Tuple[str, str]]:
+    def __iter__(self) -> Iterator[Tuple[str, str]]:
         yield self._header_name(), self.render_header_content()
 
     def _header_name(self) -> str:

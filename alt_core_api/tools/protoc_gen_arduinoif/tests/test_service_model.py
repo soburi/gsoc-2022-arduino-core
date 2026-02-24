@@ -94,7 +94,7 @@ def test_build_service_model_has_expected_headers_and_groups(tmp_path: Path) -> 
 
 def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
     model = _hardware_serial_model(tmp_path)
-    rendered_names = [name for name, _ in ServiceRenderer(model).iter_headers()]
+    rendered_names = [name for name, _ in ServiceRenderer(model)]
     assert rendered_names == [
         "hardware_serial_interface.hpp",
         "hardware_serial_api.hpp",

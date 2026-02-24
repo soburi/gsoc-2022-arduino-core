@@ -45,7 +45,7 @@ class ServiceRenderer:
     def __init__(self, model: ServiceModel) -> None:
         self._model = model
 
-    def iter_headers(self) -> Iterator[Tuple[str, str]]:
+    def __iter__(self) -> Iterator[Tuple[str, str]]:
         for header_attr, surface, gate_attr in _HEADER_ORDER:
             if gate_attr and not getattr(self._model, gate_attr):
                 continue

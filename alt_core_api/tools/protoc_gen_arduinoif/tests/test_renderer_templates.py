@@ -89,7 +89,7 @@ def _sample_model() -> ServiceModel:
 def test_renderer_templates_emit_expected_fragments() -> None:
     model = _sample_model()
     renderer = ServiceRenderer(model)
-    rendered = dict(renderer.iter_headers())
+    rendered = dict(renderer)
 
     ifc_content = rendered["example_interface.hpp"]
     assert "class ExampleInterface" in ifc_content
@@ -117,7 +117,7 @@ def test_renderer_template_iter_order_is_stable() -> None:
     model = _sample_model()
     renderer = ServiceRenderer(model)
 
-    names = [name for name, _ in renderer.iter_headers()]
+    names = [name for name, _ in renderer]
     assert names == [
         "example_interface.hpp",
         "example_api.hpp",

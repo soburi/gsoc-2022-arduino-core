@@ -28,10 +28,7 @@ def _iter_generated_files(
             continue
 
         if proto_file.enum_type and not proto_file.service:
-            yield from EnumRenderer(
-                proto_file.name,
-                list(proto_file.enum_type),
-            ).iter_headers()
+            yield from EnumRenderer(proto_file.name, list(proto_file.enum_type))
 
         for service in proto_file.service:
             service_model = ServiceModelBuilder.build(
@@ -40,7 +37,7 @@ def _iter_generated_files(
                 list(proto_file.enum_type),
                 context,
             )
-            yield from ServiceRenderer(service_model).iter_headers()
+            yield from ServiceRenderer(service_model)
 
 
 def main() -> int:
