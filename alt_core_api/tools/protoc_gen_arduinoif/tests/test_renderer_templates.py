@@ -10,9 +10,12 @@ from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif import MethodSpec, PlannedMethod  # noqa: E402
 from protoc_gen_arduinoif.service_renderer import ServiceRenderer  # noqa: E402
-from protoc_gen_arduinoif.service_model import ServiceModel  # noqa: E402
+from protoc_gen_arduinoif.service_model import (  # noqa: E402
+    MethodSpec,
+    PlannedMethod,
+    ServiceModel,
+)
 
 
 def _sample_model() -> ServiceModel:

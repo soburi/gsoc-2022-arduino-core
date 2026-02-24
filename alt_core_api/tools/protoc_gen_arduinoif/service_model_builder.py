@@ -11,9 +11,8 @@ from google.protobuf.descriptor_pb2 import (
     FieldDescriptorProto,
 )
 
-from . import MethodSpec, PlannedMethod
 from .request_context import RequestContext
-from .service_model import ServiceModel
+from .service_model import MethodSpec, PlannedMethod, ServiceModel
 
 __all__ = [
     "ServiceModelBuilder",
