@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterator, List, NamedTuple, Tuple
+from typing import Dict, List, NamedTuple
 
 from google.protobuf.descriptor_pb2 import DescriptorProto
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
@@ -87,8 +87,3 @@ class ServicePlan(NamedTuple):
             service_index,
             message_map,
         )
-
-    def iter_rendered_headers(self) -> Iterator[Tuple[str, str]]:
-        from .service_codegen import _RenderedHeaderStream
-
-        yield from _RenderedHeaderStream(self).iter_files()

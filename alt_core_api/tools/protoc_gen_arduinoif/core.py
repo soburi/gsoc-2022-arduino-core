@@ -8,7 +8,7 @@ from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 
-from .header_render import render_enum_header
+from .header_render import ServicePlanRenderer, render_enum_header
 from .request_context import RequestContext
 from .service_plan import ServicePlan
 
@@ -39,7 +39,7 @@ def _iter_generated_files(
                 list(proto_file.enum_type),
                 context,
             )
-            yield from service_plan.iter_rendered_headers()
+            yield from ServicePlanRenderer(service_plan).iter_headers()
 
 
 def _types_header_name_for_proto(proto_file_name: str) -> str:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, List
+from typing import Callable, Iterator, List, Tuple
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
@@ -99,6 +99,30 @@ class ServicePlanRenderer:
         body_lines.append(f"  {self._plan.api_name}& {self._plan.api_member_name};")
         body_lines.append("};")
         return self._render_header(self._plan.service_impl_includes, body_lines)
+
+    def iter_headers(self) -> Iterator[Tuple[str, str]]:
+        yield (
+            self._plan.ifc_header,
+            self.render_ifc_header_content(),
+        )
+
+        if self._plan.generate_api:
+            yield (
+                self._plan.api_header,
+                self.render_api_header_content(),
+            )
+
+        if self._plan.generate_service:
+            yield (
+                self._plan.service_header,
+                self.render_service_header_content(),
+            )
+
+        if self._plan.generate_service_impl:
+            yield (
+                self._plan.service_impl_header,
+                self.render_service_impl_header_content(),
+            )
 
     def _append_enum_decls(self, body_lines: List[str]) -> None:
         if not self._plan.proto_enums:
@@ -223,4 +247,3 @@ def render_enum_header(enums: List[EnumDescriptorProto]) -> str:
         lines.pop()
     lines.append("")
     return "\n".join(lines)
-

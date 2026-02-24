@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import PurePosixPath
-from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 from google.protobuf.descriptor_pb2 import (
     DescriptorProto,
@@ -33,9 +33,6 @@ from . import (
     SERVICE_SERVICE_CLASS_NAME_TAG,
     SERVICE_SERVICE_IMPL_CLASS_NAME_TAG,
     ServiceIndex,
-)
-from .header_render import (
-    ServicePlanRenderer,
 )
 from .request_context import RequestContext
 from .service_plan import MethodSpec, PlannedMethod, ServicePlan
@@ -704,32 +701,3 @@ class _ServicePlanBuilder:
             )
         return methods
 
-
-class _RenderedHeaderStream:
-    def __init__(self, plan: ServicePlan) -> None:
-        self._plan = plan
-
-    def iter_files(self) -> Iterator[Tuple[str, str]]:
-        renderer = ServicePlanRenderer(self._plan)
-        yield (
-            self._plan.ifc_header,
-            renderer.render_ifc_header_content(),
-        )
-
-        if self._plan.generate_api:
-            yield (
-                self._plan.api_header,
-                renderer.render_api_header_content(),
-            )
-
-        if self._plan.generate_service:
-            yield (
-                self._plan.service_header,
-                renderer.render_service_header_content(),
-            )
-
-        if self._plan.generate_service_impl:
-            yield (
-                self._plan.service_impl_header,
-                renderer.render_service_impl_header_content(),
-            )

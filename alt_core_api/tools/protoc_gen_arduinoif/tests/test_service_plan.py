@@ -22,6 +22,7 @@ from protoc_gen_arduinoif import (  # noqa: E402
     RequestContext,
     ServicePlan,
 )
+from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
 
 
 def _encode_varint(value: int) -> bytes:
@@ -108,7 +109,7 @@ def test_build_service_plan_has_expected_headers_and_groups(tmp_path: Path) -> N
 
 def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
     plan = _hardware_serial_plan(tmp_path)
-    rendered_names = [name for name, _ in plan.iter_rendered_headers()]
+    rendered_names = [name for name, _ in ServicePlanRenderer(plan).iter_headers()]
     assert rendered_names == [
         "hardware_serial_interface.hpp",
         "hardware_serial_api.hpp",
