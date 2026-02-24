@@ -8,7 +8,7 @@ from typing import Dict, List, NamedTuple, Set
 from google.protobuf.compiler import plugin_pb2
 from google.protobuf.descriptor_pb2 import DescriptorProto
 
-from .constants import ServiceIndex
+from . import ServiceIndex
 
 __all__ = [
     "RequestContext",

@@ -7,7 +7,7 @@ from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
-from .constants import (
+from . import (
     SERVICE_BASE_SERVICES_TAG,
     SERVICE_API_CLASS_NAME_TAG,
     SERVICE_API_MEMBER_NAME_TAG,

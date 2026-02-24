@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 
 from google.protobuf.descriptor_pb2 import DescriptorProto, FieldDescriptorProto
 
-from .constants import (
+from . import (
     FIELD_CPP_NAME_TAG,
     FIELD_CPP_TYPE_TAG,
     METHOD_CPP_ARG_TYPES_TAG,

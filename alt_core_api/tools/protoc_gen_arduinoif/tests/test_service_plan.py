@@ -17,7 +17,7 @@ from google.protobuf.descriptor_pb2 import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif.constants import METHOD_VISIBILITY_TAG  # noqa: E402
+from protoc_gen_arduinoif import METHOD_VISIBILITY_TAG  # noqa: E402
 from protoc_gen_arduinoif.method_specs import collect_lineage_methods  # noqa: E402
 from protoc_gen_arduinoif.request_context import build_request_context  # noqa: E402
 from protoc_gen_arduinoif.service_codegen import (  # noqa: E402
