@@ -18,12 +18,11 @@ from google.protobuf.descriptor_pb2 import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif.core import _load_arduino_opts_pb2  # noqa: E402
+from protoc_gen_arduinoif.options_runtime import get_arduino_opts_pb2  # noqa: E402
 from protoc_gen_arduinoif.request_context import RequestContext  # noqa: E402
 from protoc_gen_arduinoif.service_model_builder import ServiceModelBuilder  # noqa: E402
 
-arduino_opts_pb2 = _load_arduino_opts_pb2()
-ServiceModelBuilder.configure_options_module(arduino_opts_pb2)
+arduino_opts_pb2 = get_arduino_opts_pb2()
 
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:

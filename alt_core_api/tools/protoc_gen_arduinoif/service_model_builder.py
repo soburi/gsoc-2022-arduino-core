@@ -11,6 +11,7 @@ from google.protobuf.descriptor_pb2 import (
     FieldDescriptorProto,
 )
 
+from .options_runtime import get_arduino_opts_pb2
 from .request_context import RequestContext
 from .service_model import MethodSpec, PlannedMethod, ServiceModel
 
@@ -30,15 +31,9 @@ class ServiceModelBuilder:
         generate_service: bool
         generate_service_impl: bool
 
-    _arduino_opts_pb2 = None
-
     class _OptionsView:
-        def __init__(self, options, arduino_opts_pb2) -> None:
+        def __init__(self, options) -> None:
             self._options = options
-            self._arduino_opts_pb2 = arduino_opts_pb2
-
-        def _ext(self, extension_name: str):
-            return getattr(self._arduino_opts_pb2, extension_name)
 
         def _has_extension(self, extension) -> bool:
             try:
@@ -46,22 +41,19 @@ class ServiceModelBuilder:
             except (AttributeError, KeyError):
                 return False
 
-        def string(self, extension_name: str) -> str:
-            extension = self._ext(extension_name)
+        def string(self, extension) -> str:
             if not self._has_extension(extension):
                 return ""
             return str(self._options.Extensions[extension])
 
-        def string_list(self, extension_name: str) -> List[str]:
-            extension = self._ext(extension_name)
+        def string_list(self, extension) -> List[str]:
             return [
                 text
                 for text in (str(value).strip() for value in self._options.Extensions[extension])
                 if text
             ]
 
-        def bool(self, extension_name: str, default: bool = False) -> bool:
-            extension = self._ext(extension_name)
+        def bool(self, extension, default: bool = False) -> bool:
             if not self._has_extension(extension):
                 return default
             return bool(self._options.Extensions[extension])
@@ -99,14 +91,8 @@ class ServiceModelBuilder:
         self._service_full_name = RequestContext.full_service_name(package_name, service.name)
 
     @classmethod
-    def configure_options_module(cls, arduino_opts_pb2_module) -> None:
-        cls._arduino_opts_pb2 = arduino_opts_pb2_module
-
-    @classmethod
     def _options_view(cls, options):
-        if cls._arduino_opts_pb2 is None:
-            raise RuntimeError("ServiceModelBuilder options module is not configured")
-        return cls._OptionsView(options, cls._arduino_opts_pb2)
+        return cls._OptionsView(options)
 
     @classmethod
     def build(
@@ -119,24 +105,27 @@ class ServiceModelBuilder:
         return cls(service, package_name, proto_enums, context)._build()
 
     def _build(self) -> ServiceModel:
+        opts_pb2 = get_arduino_opts_pb2()
         service_opts = self._options_view(self._service.options)
 
-        ifc_header = service_opts.string("ifc_header_name").strip() or f"{self._snake_case(self._service.name)}_interface.hpp"
+        ifc_header = service_opts.string(opts_pb2.ifc_header_name).strip() or f"{self._snake_case(self._service.name)}_interface.hpp"
         if ifc_header.endswith("_interface.hpp"):
             stem = ifc_header[: -len("_interface.hpp")]
         else:
             stem = PurePosixPath(ifc_header).stem
 
         options = self._ResolvedServiceOptions(
-            ifc_name=service_opts.string("ifc_class_name").strip() or f"{self._service.name}Interface",
-            api_name=service_opts.string("api_class_name").strip() or f"{self._service.name}Api",
-            service_name=service_opts.string("service_class_name").strip() or f"{self._service.name}Service",
-            service_impl_name=service_opts.string("service_impl_class_name").strip()
+            ifc_name=service_opts.string(opts_pb2.ifc_class_name).strip() or f"{self._service.name}Interface",
+            api_name=service_opts.string(opts_pb2.api_class_name).strip() or f"{self._service.name}Api",
+            service_name=service_opts.string(opts_pb2.service_class_name).strip() or f"{self._service.name}Service",
+            service_impl_name=service_opts.string(opts_pb2.service_impl_class_name).strip()
             or f"{self._service.name}ServiceImpl",
-            api_member_name=service_opts.string("api_member_name").strip() or "api_",
-            generate_api=service_opts.bool("generate_api_class", False),
-            generate_service=service_opts.bool("generate_service_class", False),
-            generate_service_impl=service_opts.bool("generate_service_impl_class", False),
+            api_member_name=service_opts.string(opts_pb2.api_member_name).strip() or "api_",
+            generate_api=service_opts.bool(opts_pb2.generate_api_class, False),
+            generate_service=service_opts.bool(opts_pb2.generate_service_class, False),
+            generate_service_impl=service_opts.bool(
+                opts_pb2.generate_service_impl_class, False
+            ),
         )
         self._validate_generation_flags(options)
 
@@ -184,11 +173,11 @@ class ServiceModelBuilder:
             ancestor_service, _ = self._context.service_index[ancestor_full_name]
             ancestor_opts = self._options_view(ancestor_service.options)
             base_ifc_names.append(
-                ancestor_opts.string("ifc_class_name").strip()
+                ancestor_opts.string(opts_pb2.ifc_class_name).strip()
                 or f"{ancestor_service.name}Interface"
             )
             base_ifc_headers.append(
-                ancestor_opts.string("ifc_header_name").strip()
+                ancestor_opts.string(opts_pb2.ifc_header_name).strip()
                 or f"{self._snake_case(ancestor_service.name)}_interface.hpp"
             )
         base_ifc_names = list(dict.fromkeys(base_ifc_names))
@@ -259,29 +248,30 @@ class ServiceModelBuilder:
         method,
         message_map: Dict[str, DescriptorProto],
     ) -> MethodSpec:
+        opts_pb2 = get_arduino_opts_pb2()
         options = cls._options_view(method.options)
-        source_virtual = options.bool("source_virtual", True)
-        emit_api = options.bool("emit_api", True)
-        emit_service = options.bool("emit_service", True)
-        visibility = options.string("method_visibility").strip().lower() or "public"
+        source_virtual = options.bool(opts_pb2.source_virtual, True)
+        emit_api = options.bool(opts_pb2.emit_api, True)
+        emit_service = options.bool(opts_pb2.emit_service, True)
+        visibility = options.string(opts_pb2.method_visibility).strip().lower() or "public"
         if visibility not in {"public", "protected", "private"}:
             raise ValueError(
                 f"{method.name}: unsupported method_visibility '{visibility}' "
                 "(expected: public, protected, private)"
             )
 
-        method_name = options.string("cpp_name").strip() or method.name
+        method_name = options.string(opts_pb2.cpp_name).strip() or method.name
 
         def resolve_field(field: FieldDescriptorProto) -> Tuple[str, str]:
             field_opts = cls._options_view(field.options)
             field_type = (
-                field_opts.string("cpp_type").strip()
+                field_opts.string(opts_pb2.cpp_type).strip()
                 or cls._default_types.get(field.type, "int32_t")
             )
-            field_name = field_opts.string("field_cpp_name").strip() or field.name
+            field_name = field_opts.string(opts_pb2.field_cpp_name).strip() or field.name
             return field_type, field_name
 
-        return_type = options.string("cpp_return").strip()
+        return_type = options.string(opts_pb2.cpp_return).strip()
         if not return_type:
             output_message = message_map.get(method.output_type)
             if output_message is None:
@@ -296,7 +286,7 @@ class ServiceModelBuilder:
 
         arg_names: List[str] = []
         param_decls: List[str] = []
-        arg_types = options.string_list("cpp_arg_types")
+        arg_types = options.string_list(opts_pb2.cpp_arg_types)
         if arg_types:
             arg_names = [f"arg{index}" for index in range(len(arg_types))]
             param_decls = [
@@ -393,9 +383,12 @@ class ServiceModelBuilder:
         if entry is None:
             raise ValueError(f"service '{service_full_name}' not found")
 
+        opts_pb2 = get_arduino_opts_pb2()
         service, package_name = entry
         inherited: List[str] = []
-        for base_ref in self._options_view(service.options).string_list("base_services"):
+        for base_ref in self._options_view(service.options).string_list(
+            opts_pb2.base_services
+        ):
             base_full_name = self._resolve_service_reference(base_ref, package_name)
             inherited.extend(
                 self._collect_service_lineage(
@@ -429,10 +422,13 @@ class ServiceModelBuilder:
         return candidate
 
     def _collect_lineage_includes(self, lineage: List[str]) -> List[str]:
+        opts_pb2 = get_arduino_opts_pb2()
         includes: List[str] = []
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
-            includes.extend(self._options_view(service.options).string_list("extra_includes"))
+            includes.extend(
+                self._options_view(service.options).string_list(opts_pb2.extra_includes)
+            )
         return includes
 
     @staticmethod
