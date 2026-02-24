@@ -14,7 +14,7 @@ set(ARDUINO_IDL_OPTS_PB2_SCRIPT
   ${CMAKE_CURRENT_SOURCE_DIR}/../tools/protoc_gen_arduinoif/scripts/regenerate_arduino_opts_pb2.sh
 )
 set(ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/../tools/protoc_gen_arduinoif/generated
+  ${CMAKE_CURRENT_BINARY_DIR}/generated/protoc_gen_arduinoif
 )
 set(ARDUINO_IDL_OPTS_PB2_OUTPUT
   ${ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR}/arduino_opts_pb2.py
@@ -63,6 +63,7 @@ zephyr_nanopb_sources(arduinocore_idl
 add_custom_command(
   OUTPUT ${ARDUINO_IDL_OPTS_PB2_OUTPUT}
   COMMAND ${CMAKE_COMMAND} -E env
+    PROTOC_GEN_ARDUINOIF_PB2_OUT_DIR=${ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR}
     /bin/bash ${ARDUINO_IDL_OPTS_PB2_SCRIPT}
   DEPENDS
     ${ARDUINO_IDL_OPTS_PROTO}
@@ -78,7 +79,9 @@ add_custom_target(arduinocore_idl_generate_opts_pb2
 add_custom_command(
   OUTPUT ${ARDUINO_IDL_IF_HEADERS} ${ARDUINO_IDL_TYPE_HEADERS}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARDUINO_IDL_IF_OUTPUT_DIR}
-  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+  COMMAND ${CMAKE_COMMAND} -E env
+    PROTOC_GEN_ARDUINOIF_PB2=${ARDUINO_IDL_OPTS_PB2_OUTPUT}
+    ${PROTOBUF_PROTOC_EXECUTABLE}
     --plugin=protoc-gen-arduinoif=${ARDUINO_IDL_PLUGIN}
     --arduinoif_out=${ARDUINO_IDL_IF_OUTPUT_DIR}
     --proto_path=${ARDUINO_IDL_PROTO_DIR}

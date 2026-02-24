@@ -6,8 +6,11 @@ cd "${ROOT_DIR}"
 
 VENV_PYTHON="/home/crs/zephyrproject/.venv/bin/python"
 PROTO_DIR="alt_core_api/idl/proto"
-OUT_DIR="alt_core_api/tools/protoc_gen_arduinoif/generated"
+OUT_DIR="${PROTOC_GEN_ARDUINOIF_PB2_OUT_DIR:-alt_core_api/tools/protoc_gen_arduinoif/generated}"
 GRPC_PROTO_DIR="/home/crs/zephyrproject/.venv/lib/python3.12/site-packages/grpc_tools/_proto"
+PB2_PATH="${OUT_DIR}/arduino_opts_pb2.py"
+
+mkdir -p "${OUT_DIR}"
 
 "${VENV_PYTHON}" -m grpc_tools.protoc \
   -I"${PROTO_DIR}" \
@@ -15,11 +18,12 @@ GRPC_PROTO_DIR="/home/crs/zephyrproject/.venv/lib/python3.12/site-packages/grpc_
   --python_out="${OUT_DIR}" \
   "${PROTO_DIR}/arduino_opts.proto"
 
-"${VENV_PYTHON}" - <<'PY'
+PROTOC_GEN_ARDUINOIF_PB2_PATCH_TARGET="${PB2_PATH}" "${VENV_PYTHON}" - <<'PY'
 import re
 from pathlib import Path
+import os
 
-pb2_path = Path("alt_core_api/tools/protoc_gen_arduinoif/generated/arduino_opts_pb2.py")
+pb2_path = Path(os.environ["PROTOC_GEN_ARDUINOIF_PB2_PATCH_TARGET"])
 text = pb2_path.read_text(encoding="utf-8")
 
 import_line = "from google.protobuf import runtime_version as _runtime_version\n"

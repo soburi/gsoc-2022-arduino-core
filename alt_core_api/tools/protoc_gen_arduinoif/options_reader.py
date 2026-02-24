@@ -2,9 +2,28 @@
 
 from __future__ import annotations
 
+import importlib.util
+import os
+import types
 from typing import List
 
-from .generated import arduino_opts_pb2
+def _load_arduino_opts_pb2() -> types.ModuleType:
+    pb2_path = os.environ.get("PROTOC_GEN_ARDUINOIF_PB2")
+    if pb2_path:
+        module_name = "_protoc_gen_arduinoif_arduino_opts_pb2"
+        spec = importlib.util.spec_from_file_location(module_name, pb2_path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"failed to load arduino_opts_pb2 from '{pb2_path}'")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    from .generated import arduino_opts_pb2 as bundled_pb2
+
+    return bundled_pb2
+
+
+arduino_opts_pb2 = _load_arduino_opts_pb2()
 
 __all__ = [
     "field_cpp_name",
