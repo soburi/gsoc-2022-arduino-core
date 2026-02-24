@@ -40,6 +40,7 @@ from .request_context import RequestContext
 
 __all__ = [
     "ServicePlan",
+    "ServicePlanBuilder",
 ]
 
 ParsedFields = Dict[int, List[Tuple[int, object]]]
@@ -66,34 +67,6 @@ class ServicePlan(NamedTuple):
     generate_api: bool
     generate_service: bool
     generate_service_impl: bool
-
-    @classmethod
-    def build(
-        cls,
-        service,
-        package_name: str,
-        proto_enums: List[EnumDescriptorProto],
-        context: RequestContext,
-    ) -> "ServicePlan":
-        return _ServicePlanBuilder(
-            service,
-            package_name,
-            proto_enums,
-            context,
-        ).build()
-
-    @classmethod
-    def collect_lineage_methods(
-        cls,
-        lineage: List[str],
-        service_index,
-        message_map: Dict[str, DescriptorProto],
-    ) -> List[MethodSpec]:
-        return _MethodSpecFactory.collect_lineage_methods(
-            lineage,
-            service_index,
-            message_map,
-        )
 
 
 class _WireOptions:
@@ -218,7 +191,18 @@ class _WireOptions:
                 raise ValueError("varint is too large")
 
 
-class _MethodSpecFactory:
+class _ResolvedServiceOptions(NamedTuple):
+    ifc_name: str
+    api_name: str
+    service_name: str
+    service_impl_name: str
+    api_member_name: str
+    generate_api: bool
+    generate_service: bool
+    generate_service_impl: bool
+
+
+class ServicePlanBuilder:
     _default_types = {
         FieldDescriptorProto.TYPE_BOOL: "bool",
         FieldDescriptorProto.TYPE_INT32: "int32_t",
@@ -238,8 +222,146 @@ class _MethodSpecFactory:
         FieldDescriptorProto.TYPE_ENUM: "int32_t",
     }
 
+    def __init__(
+        self,
+        service,
+        package_name: str,
+        proto_enums: List[EnumDescriptorProto],
+        context: RequestContext,
+    ) -> None:
+        self._service = service
+        self._package_name = package_name
+        self._proto_enums = proto_enums
+        self._context = context
+        self._service_full_name = RequestContext.full_service_name(
+            package_name, service.name
+        )
+
     @classmethod
-    def collect_lineage_methods(
+    def build(
+        cls,
+        service,
+        package_name: str,
+        proto_enums: List[EnumDescriptorProto],
+        context: RequestContext,
+    ) -> ServicePlan:
+        return cls(
+            service,
+            package_name,
+            proto_enums,
+            context,
+        )._build()
+
+    def _build(self) -> ServicePlan:
+        options = self._resolve_options()
+        self._validate_generation_flags(options)
+
+        own_method_specs = self._collect_lineage_methods(
+            [self._service_full_name],
+            self._context.service_index,
+            self._context.message_map,
+        )
+        lineage = self._collect_service_lineage(self._service_full_name)
+        ancestor_services = lineage[:-1]
+        lineage_method_specs = self._collect_lineage_methods(
+            lineage,
+            self._context.service_index,
+            self._context.message_map,
+        )
+        own_virtual_decls = {
+            spec.decl for spec in own_method_specs if spec.source_virtual
+        }
+        api_callable = {
+            spec.call_name
+            for spec in lineage_method_specs
+            if spec.emit_api and spec.source_virtual
+        }
+        service_callable = {
+            spec.call_name for spec in lineage_method_specs if spec.emit_service
+        }
+
+        self._validate_api_methods(options, lineage_method_specs)
+        self._validate_service_impl_api_delegate(
+            options, lineage_method_specs, api_callable
+        )
+
+        service_impl_callable = (
+            api_callable
+            if (options.generate_service_impl and options.generate_api)
+            else service_callable
+        )
+
+        methods = self._build_planned_methods(
+            lineage_method_specs,
+            own_virtual_decls,
+            service_impl_callable,
+        )
+
+        include_list = self._dedupe_ordered(self._collect_lineage_includes(lineage))
+        service_base_ifc_class_names: List[str] = []
+        service_base_ifc_header_names: List[str] = []
+        for ancestor_full_name in ancestor_services:
+            ancestor_service, _ = self._context.service_index[ancestor_full_name]
+            service_base_ifc_class_names.append(self._ifc_class_name(ancestor_service))
+            service_base_ifc_header_names.append(
+                self._service_header_name(ancestor_service)
+            )
+        service_base_ifc_class_names = self._dedupe_ordered(
+            service_base_ifc_class_names
+        )
+        service_base_ifc_header_names = self._dedupe_ordered(
+            service_base_ifc_header_names
+        )
+
+        stem = self._service_header_stem(self._service)
+        ifc_header = self._service_header_name(self._service)
+        api_header = f"{stem}_api.hpp"
+        service_header = f"{stem}_service.hpp"
+        service_impl_header = f"{stem}_service_impl.hpp"
+
+        api_includes = [ifc_header, *include_list]
+
+        service_includes: List[str] = []
+        if options.generate_service:
+            service_includes = self._dedupe_ordered(
+                [*service_base_ifc_header_names, *include_list]
+            )
+            if self._proto_enums:
+                service_includes = self._dedupe_ordered(
+                    [ifc_header, *service_includes]
+                )
+
+        service_impl_includes: List[str] = []
+        if options.generate_service_impl:
+            service_impl_includes = [service_header, *include_list]
+            if options.generate_api:
+                service_impl_includes.insert(1, api_header)
+
+        return ServicePlan(
+            include_list=include_list,
+            api_includes=api_includes,
+            service_includes=service_includes,
+            service_impl_includes=service_impl_includes,
+            namespace_name=self._cpp_namespace_from_package(self._package_name),
+            proto_enums=self._proto_enums,
+            ifc_name=options.ifc_name,
+            api_name=options.api_name,
+            service_name=options.service_name,
+            service_impl_name=options.service_impl_name,
+            api_member_name=options.api_member_name,
+            service_base_ifc_class_names=service_base_ifc_class_names,
+            ifc_header=ifc_header,
+            api_header=api_header,
+            service_header=service_header,
+            service_impl_header=service_impl_header,
+            methods=methods,
+            generate_api=options.generate_api,
+            generate_service=options.generate_service,
+            generate_service_impl=options.generate_service_impl,
+        )
+
+    @classmethod
+    def _collect_lineage_methods(
         cls,
         lineage: List[str],
         service_index: ServiceIndex,
@@ -387,140 +509,6 @@ class _MethodSpecFactory:
     @classmethod
     def _field_type(cls, field: FieldDescriptorProto) -> str:
         return cls._default_types.get(field.type, "int32_t")
-
-
-class _ResolvedServiceOptions(NamedTuple):
-    ifc_name: str
-    api_name: str
-    service_name: str
-    service_impl_name: str
-    api_member_name: str
-    generate_api: bool
-    generate_service: bool
-    generate_service_impl: bool
-
-
-class _ServicePlanBuilder:
-    def __init__(
-        self,
-        service,
-        package_name: str,
-        proto_enums: List[EnumDescriptorProto],
-        context: RequestContext,
-    ) -> None:
-        self._service = service
-        self._package_name = package_name
-        self._proto_enums = proto_enums
-        self._context = context
-        self._service_full_name = RequestContext.full_service_name(
-            package_name, service.name
-        )
-
-    def build(self) -> ServicePlan:
-        options = self._resolve_options()
-        self._validate_generation_flags(options)
-
-        own_method_specs = _MethodSpecFactory.collect_lineage_methods(
-            [self._service_full_name],
-            self._context.service_index,
-            self._context.message_map,
-        )
-        lineage = self._collect_service_lineage(self._service_full_name)
-        ancestor_services = lineage[:-1]
-        lineage_method_specs = _MethodSpecFactory.collect_lineage_methods(
-            lineage, self._context.service_index, self._context.message_map
-        )
-        own_virtual_decls = {
-            spec.decl for spec in own_method_specs if spec.source_virtual
-        }
-        api_callable = {
-            spec.call_name
-            for spec in lineage_method_specs
-            if spec.emit_api and spec.source_virtual
-        }
-        service_callable = {
-            spec.call_name for spec in lineage_method_specs if spec.emit_service
-        }
-
-        self._validate_api_methods(options, lineage_method_specs)
-        self._validate_service_impl_api_delegate(
-            options, lineage_method_specs, api_callable
-        )
-
-        service_impl_callable = (
-            api_callable
-            if (options.generate_service_impl and options.generate_api)
-            else service_callable
-        )
-
-        methods = self._build_planned_methods(
-            lineage_method_specs,
-            own_virtual_decls,
-            service_impl_callable,
-        )
-
-        include_list = self._dedupe_ordered(self._collect_lineage_includes(lineage))
-        service_base_ifc_class_names: List[str] = []
-        service_base_ifc_header_names: List[str] = []
-        for ancestor_full_name in ancestor_services:
-            ancestor_service, _ = self._context.service_index[ancestor_full_name]
-            service_base_ifc_class_names.append(self._ifc_class_name(ancestor_service))
-            service_base_ifc_header_names.append(
-                self._service_header_name(ancestor_service)
-            )
-        service_base_ifc_class_names = self._dedupe_ordered(
-            service_base_ifc_class_names
-        )
-        service_base_ifc_header_names = self._dedupe_ordered(
-            service_base_ifc_header_names
-        )
-
-        stem = self._service_header_stem(self._service)
-        ifc_header = self._service_header_name(self._service)
-        api_header = f"{stem}_api.hpp"
-        service_header = f"{stem}_service.hpp"
-        service_impl_header = f"{stem}_service_impl.hpp"
-
-        api_includes = [ifc_header, *include_list]
-
-        service_includes: List[str] = []
-        if options.generate_service:
-            service_includes = self._dedupe_ordered(
-                [*service_base_ifc_header_names, *include_list]
-            )
-            if self._proto_enums:
-                service_includes = self._dedupe_ordered(
-                    [ifc_header, *service_includes]
-                )
-
-        service_impl_includes: List[str] = []
-        if options.generate_service_impl:
-            service_impl_includes = [service_header, *include_list]
-            if options.generate_api:
-                service_impl_includes.insert(1, api_header)
-
-        return ServicePlan(
-            include_list=include_list,
-            api_includes=api_includes,
-            service_includes=service_includes,
-            service_impl_includes=service_impl_includes,
-            namespace_name=self._cpp_namespace_from_package(self._package_name),
-            proto_enums=self._proto_enums,
-            ifc_name=options.ifc_name,
-            api_name=options.api_name,
-            service_name=options.service_name,
-            service_impl_name=options.service_impl_name,
-            api_member_name=options.api_member_name,
-            service_base_ifc_class_names=service_base_ifc_class_names,
-            ifc_header=ifc_header,
-            api_header=api_header,
-            service_header=service_header,
-            service_impl_header=service_impl_header,
-            methods=methods,
-            generate_api=options.generate_api,
-            generate_service=options.generate_service,
-            generate_service_impl=options.generate_service_impl,
-        )
 
     def _resolve_options(self) -> _ResolvedServiceOptions:
         ifc_name = (

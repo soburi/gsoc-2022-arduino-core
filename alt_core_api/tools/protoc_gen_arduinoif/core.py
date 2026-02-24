@@ -11,7 +11,7 @@ from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
 from .header_render import ServicePlanRenderer
 from .request_context import RequestContext
-from .service_plan import ServicePlan
+from .service_plan import ServicePlanBuilder
 
 __all__ = [
     "main",
@@ -34,7 +34,7 @@ def _iter_generated_files(
             )
 
         for service in proto_file.service:
-            service_plan = ServicePlan.build(
+            service_plan = ServicePlanBuilder.build(
                 service,
                 proto_file.package,
                 list(proto_file.enum_type),

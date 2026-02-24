@@ -20,7 +20,8 @@ sys.path.insert(0, str(REPO_ROOT / "tools"))
 from protoc_gen_arduinoif import (  # noqa: E402
     METHOD_VISIBILITY_TAG,
     RequestContext,
-    ServicePlan,
+    SERVICE_BASE_SERVICES_TAG,
+    ServicePlanBuilder,
 )
 from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
 
@@ -82,7 +83,7 @@ def _hardware_serial_plan(tmp_path: Path):
     target_service = next(
         service for service in target_file.service if service.name == "HardwareSerial"
     )
-    return ServicePlan.build(
+    return ServicePlanBuilder.build(
         target_service,
         target_file.package,
         list(target_file.enum_type),
@@ -118,7 +119,7 @@ def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
     ]
 
 
-def test_collect_lineage_methods_prefers_latest_duplicate_decl() -> None:
+def test_build_service_plan_prefers_latest_duplicate_decl() -> None:
     empty_message = DescriptorProto(name="Empty")
     message_map = {".test.Empty": empty_message}
 
@@ -139,18 +140,28 @@ def test_collect_lineage_methods_prefers_latest_duplicate_decl() -> None:
     base_service = ServiceDescriptorProto(name="Base")
     base_service.method.extend([base_method])
     child_service = ServiceDescriptorProto(name="Child")
+    child_service.options.MergeFromString(
+        _encode_string_option(SERVICE_BASE_SERVICES_TAG, "Base")
+    )
     child_service.method.extend([child_method])
 
     service_index = {
         ".test.Base": (base_service, "test"),
         ".test.Child": (child_service, "test"),
     }
-    lineage = [".test.Base", ".test.Child"]
-
-    methods = ServicePlan.collect_lineage_methods(
-        lineage,
-        service_index,
-        message_map,
+    context = RequestContext(
+        message_map=message_map,
+        service_index=service_index,
+        lineage_cache={},
+        requested_files=set(),
+        requested_basenames=set(),
     )
-    assert len(methods) == 1
-    assert methods[0].visibility == "protected"
+    plan = ServicePlanBuilder.build(
+        child_service,
+        "test",
+        [],
+        context,
+    )
+    specs = [planned.spec for planned in plan.methods]
+    assert len(specs) == 1
+    assert specs[0].visibility == "protected"
