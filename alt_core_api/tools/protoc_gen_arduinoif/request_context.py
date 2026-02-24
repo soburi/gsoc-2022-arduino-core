@@ -12,8 +12,6 @@ from . import ServiceIndex
 
 __all__ = [
     "RequestContext",
-    "build_request_context",
-    "full_service_name",
 ]
 
 
@@ -28,7 +26,7 @@ class RequestContext(NamedTuple):
     def build(
         cls, request: plugin_pb2.CodeGeneratorRequest
     ) -> "RequestContext":
-        return build_request_context(request)
+        return _RequestContextBuilder(request).build()
 
     @staticmethod
     def full_service_name(package_name: str, service_name: str) -> str:
@@ -91,12 +89,3 @@ class _RequestContextBuilder:
                 message_map, package_prefix, child_parent, nested
             )
 
-
-def full_service_name(package_name: str, service_name: str) -> str:
-    return RequestContext.full_service_name(package_name, service_name)
-
-
-def build_request_context(
-    request: plugin_pb2.CodeGeneratorRequest,
-) -> RequestContext:
-    return _RequestContextBuilder(request).build()

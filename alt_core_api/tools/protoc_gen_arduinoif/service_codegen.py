@@ -35,19 +35,10 @@ from . import (
     ServiceIndex,
 )
 from .header_render import (
-    render_api_header_content,
-    render_ifc_header_content,
-    render_service_header_content,
-    render_service_impl_header_content,
+    ServicePlanRenderer,
 )
 from .request_context import RequestContext
 from .service_plan import MethodSpec, PlannedMethod, ServicePlan
-
-__all__ = [
-    "build_service_plan",
-    "collect_lineage_methods",
-    "render_service_headers",
-]
 
 ParsedFields = Dict[int, List[Tuple[int, object]]]
 
@@ -719,55 +710,26 @@ class _RenderedHeaderStream:
         self._plan = plan
 
     def iter_files(self) -> Iterator[Tuple[str, str]]:
+        renderer = ServicePlanRenderer(self._plan)
         yield (
             self._plan.ifc_header,
-            render_ifc_header_content(self._plan),
+            renderer.render_ifc_header_content(),
         )
 
         if self._plan.generate_api:
             yield (
                 self._plan.api_header,
-                render_api_header_content(self._plan),
+                renderer.render_api_header_content(),
             )
 
         if self._plan.generate_service:
             yield (
                 self._plan.service_header,
-                render_service_header_content(self._plan),
+                renderer.render_service_header_content(),
             )
 
         if self._plan.generate_service_impl:
             yield (
                 self._plan.service_impl_header,
-                render_service_impl_header_content(self._plan),
+                renderer.render_service_impl_header_content(),
             )
-
-
-def collect_lineage_methods(
-    lineage: List[str],
-    service_index: ServiceIndex,
-    message_map: Dict[str, DescriptorProto],
-) -> List[MethodSpec]:
-    return _MethodSpecFactory.collect_lineage_methods(
-        lineage,
-        service_index,
-        message_map,
-    )
-
-
-def build_service_plan(
-    service,
-    package_name: str,
-    proto_enums: List[EnumDescriptorProto],
-    context: RequestContext,
-) -> ServicePlan:
-    return _ServicePlanBuilder(
-        service,
-        package_name,
-        proto_enums,
-        context,
-    ).build()
-
-
-def render_service_headers(plan: ServicePlan) -> Iterator[Tuple[str, str]]:
-    yield from _RenderedHeaderStream(plan).iter_files()

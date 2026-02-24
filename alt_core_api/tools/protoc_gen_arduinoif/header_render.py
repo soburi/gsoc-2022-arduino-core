@@ -10,13 +10,10 @@ from .service_plan import MethodSpec, PlannedMethod, ServicePlan
 
 __all__ = [
     "render_enum_header",
-    "render_ifc_header_content",
-    "render_api_header_content",
-    "render_service_header_content",
-    "render_service_impl_header_content",
+    "ServicePlanRenderer",
 ]
 
-class _ServicePlanRenderer:
+class ServicePlanRenderer:
     def __init__(self, plan: ServicePlan) -> None:
         self._plan = plan
 
@@ -227,26 +224,3 @@ def render_enum_header(enums: List[EnumDescriptorProto]) -> str:
     lines.append("")
     return "\n".join(lines)
 
-
-def render_ifc_header_content(
-    plan: ServicePlan,
-) -> str:
-    return _ServicePlanRenderer(plan).render_ifc_header_content()
-
-
-def render_api_header_content(
-    plan: ServicePlan,
-) -> str:
-    return _ServicePlanRenderer(plan).render_api_header_content()
-
-
-def render_service_header_content(
-    plan: ServicePlan,
-) -> str:
-    return _ServicePlanRenderer(plan).render_service_header_content()
-
-
-def render_service_impl_header_content(
-    plan: ServicePlan,
-) -> str:
-    return _ServicePlanRenderer(plan).render_service_impl_header_content()

@@ -10,7 +10,6 @@ from google.protobuf.compiler import plugin_pb2
 
 from .header_render import render_enum_header
 from .request_context import RequestContext
-from .service_codegen import render_service_headers
 from .service_plan import ServicePlan
 
 __all__ = [
@@ -40,7 +39,7 @@ def _iter_generated_files(
                 list(proto_file.enum_type),
                 context,
             )
-            yield from render_service_headers(service_plan)
+            yield from service_plan.iter_rendered_headers()
 
 
 def _types_header_name_for_proto(proto_file_name: str) -> str:

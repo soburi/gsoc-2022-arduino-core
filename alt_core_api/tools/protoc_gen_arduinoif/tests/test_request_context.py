@@ -11,7 +11,7 @@ from google.protobuf.descriptor_pb2 import DescriptorProto
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif import RequestContext, full_service_name  # noqa: E402
+from protoc_gen_arduinoif import RequestContext  # noqa: E402
 
 
 def _build_request() -> plugin_pb2.CodeGeneratorRequest:
@@ -53,8 +53,8 @@ def test_build_request_context_collects_message_and_service_indexes() -> None:
 
 
 def test_full_service_name_handles_package_and_root() -> None:
-    assert full_service_name("arduino", "Print") == ".arduino.Print"
-    assert full_service_name("", "CommonService") == ".CommonService"
+    assert RequestContext.full_service_name("arduino", "Print") == ".arduino.Print"
+    assert RequestContext.full_service_name("", "CommonService") == ".CommonService"
 
 
 def test_is_requested_proto_matches_path_and_basename() -> None:

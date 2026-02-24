@@ -22,10 +22,6 @@ from protoc_gen_arduinoif import (  # noqa: E402
     RequestContext,
     ServicePlan,
 )
-from protoc_gen_arduinoif.service_codegen import (  # noqa: E402
-    collect_lineage_methods,
-    render_service_headers,
-)
 
 
 def _encode_varint(value: int) -> bytes:
@@ -112,7 +108,7 @@ def test_build_service_plan_has_expected_headers_and_groups(tmp_path: Path) -> N
 
 def test_render_service_headers_uses_stable_order(tmp_path: Path) -> None:
     plan = _hardware_serial_plan(tmp_path)
-    rendered_names = [name for name, _ in render_service_headers(plan)]
+    rendered_names = [name for name, _ in plan.iter_rendered_headers()]
     assert rendered_names == [
         "hardware_serial_interface.hpp",
         "hardware_serial_api.hpp",
@@ -150,6 +146,10 @@ def test_collect_lineage_methods_prefers_latest_duplicate_decl() -> None:
     }
     lineage = [".test.Base", ".test.Child"]
 
-    methods = collect_lineage_methods(lineage, service_index, message_map)
+    methods = ServicePlan.collect_lineage_methods(
+        lineage,
+        service_index,
+        message_map,
+    )
     assert len(methods) == 1
     assert methods[0].visibility == "protected"

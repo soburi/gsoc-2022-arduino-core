@@ -29,8 +29,7 @@ ServiceDescriptor = Tuple[object, str]
 ServiceIndex = Dict[str, ServiceDescriptor]
 
 from .service_plan import MethodSpec, PlannedMethod, ServicePlan
-from .request_context import RequestContext, full_service_name
-from .service_codegen import build_service_plan, render_service_headers
+from .request_context import RequestContext
 from .core import main
 
 __all__ = [
@@ -61,7 +60,4 @@ __all__ = [
     "PlannedMethod",
     "ServicePlan",
     "RequestContext",
-    "full_service_name",
-    "build_service_plan",
-    "render_service_headers",
 ]
