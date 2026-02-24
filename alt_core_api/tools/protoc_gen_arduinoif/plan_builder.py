@@ -20,18 +20,17 @@ __all__ = [
 ]
 
 
-class _ResolvedServiceOptions(NamedTuple):
-    ifc_name: str
-    api_name: str
-    service_name: str
-    service_impl_name: str
-    api_member_name: str
-    generate_api: bool
-    generate_service: bool
-    generate_service_impl: bool
-
-
 class ServicePlanBuilder:
+    class _ResolvedServiceOptions(NamedTuple):
+        ifc_name: str
+        api_name: str
+        service_name: str
+        service_impl_name: str
+        api_member_name: str
+        generate_api: bool
+        generate_service: bool
+        generate_service_impl: bool
+
     _arduino_opts_pb2 = None
 
     class _OptionsView:
@@ -370,7 +369,7 @@ class ServicePlanBuilder:
     def _field_type(cls, field: FieldDescriptorProto) -> str:
         return cls._default_types.get(field.type, "int32_t")
 
-    def _resolve_options(self) -> _ResolvedServiceOptions:
+    def _resolve_options(self) -> ServicePlanBuilder._ResolvedServiceOptions:
         options = self._options_view(self._service.options)
         ifc_name = options.string("ifc_class_name").strip() or f"{self._service.name}Interface"
         api_name = options.string("api_class_name").strip() or f"{self._service.name}Api"
@@ -380,7 +379,7 @@ class ServicePlanBuilder:
         )
         api_member_name = options.string("api_member_name").strip() or "api_"
 
-        return _ResolvedServiceOptions(
+        return self._ResolvedServiceOptions(
             ifc_name=ifc_name,
             api_name=api_name,
             service_name=self._service_class_name(self._service),
@@ -391,14 +390,18 @@ class ServicePlanBuilder:
             generate_service_impl=options.bool("generate_service_impl_class", False),
         )
 
-    def _validate_generation_flags(self, options: _ResolvedServiceOptions) -> None:
+    def _validate_generation_flags(
+        self, options: ServicePlanBuilder._ResolvedServiceOptions
+    ) -> None:
         if options.generate_service_impl and not options.generate_service:
             raise ValueError(
                 f"{self._service.name}: generate_service_impl_class=true requires generate_service_class=true"
             )
 
     def _validate_api_methods(
-        self, options: _ResolvedServiceOptions, lineage_method_specs
+        self,
+        options: ServicePlanBuilder._ResolvedServiceOptions,
+        lineage_method_specs,
     ) -> None:
         if not options.generate_api:
             return
@@ -415,7 +418,7 @@ class ServicePlanBuilder:
 
     def _validate_service_impl_api_delegate(
         self,
-        options: _ResolvedServiceOptions,
+        options: ServicePlanBuilder._ResolvedServiceOptions,
         lineage_method_specs,
         api_callable,
     ) -> None:
