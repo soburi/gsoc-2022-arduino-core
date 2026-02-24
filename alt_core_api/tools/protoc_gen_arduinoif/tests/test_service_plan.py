@@ -18,27 +18,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif import (  # noqa: E402
-    METHOD_VISIBILITY_TAG,
     RequestContext,
-    SERVICE_BASE_SERVICES_TAG,
     ServicePlanBuilder,
 )
+from protoc_gen_arduinoif.generated import arduino_opts_pb2  # noqa: E402
 from protoc_gen_arduinoif.header_render import ServicePlanRenderer  # noqa: E402
-
-
-def _encode_varint(value: int) -> bytes:
-    data = bytearray()
-    while value > 0x7F:
-        data.append((value & 0x7F) | 0x80)
-        value >>= 7
-    data.append(value)
-    return bytes(data)
-
-
-def _encode_string_option(field_number: int, text: str) -> bytes:
-    payload = text.encode("utf-8")
-    key = (field_number << 3) | 2
-    return _encode_varint(key) + _encode_varint(len(payload)) + payload
 
 
 def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
@@ -133,16 +117,12 @@ def test_build_service_plan_prefers_latest_duplicate_decl() -> None:
         input_type=".test.Empty",
         output_type=".test.Empty",
     )
-    child_method.options.MergeFromString(
-        _encode_string_option(METHOD_VISIBILITY_TAG, "protected")
-    )
+    child_method.options.Extensions[arduino_opts_pb2.method_visibility] = "protected"
 
     base_service = ServiceDescriptorProto(name="Base")
     base_service.method.extend([base_method])
     child_service = ServiceDescriptorProto(name="Child")
-    child_service.options.MergeFromString(
-        _encode_string_option(SERVICE_BASE_SERVICES_TAG, "Base")
-    )
+    child_service.options.Extensions[arduino_opts_pb2.base_services].append("Base")
     child_service.method.extend([child_method])
 
     service_index = {

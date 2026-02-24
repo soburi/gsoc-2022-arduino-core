@@ -48,7 +48,8 @@ class PlannedMethod(NamedTuple):
     in_service: bool
     in_service_impl: bool
 
-from .service_plan import ServicePlan, ServicePlanBuilder
+from .plan_builder import ServicePlanBuilder
+from .service_plan import ServicePlan
 from .request_context import RequestContext
 from .core import main
 

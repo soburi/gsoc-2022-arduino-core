@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable, Iterator, List, Tuple
+
+from jinja2 import Environment, FileSystemLoader
 
 from . import MethodSpec, PlannedMethod
 from .service_plan import ServicePlan
@@ -11,92 +14,82 @@ __all__ = [
     "ServicePlanRenderer",
 ]
 
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+_ENV = Environment(
+    loader=FileSystemLoader(str(_TEMPLATES_DIR)),
+    autoescape=False,
+    trim_blocks=True,
+    lstrip_blocks=True,
+    keep_trailing_newline=True,
+)
+
+
 class ServicePlanRenderer:
     def __init__(self, plan: ServicePlan) -> None:
         self._plan = plan
 
     def render_ifc_header_content(self) -> str:
-        body_lines: List[str] = []
-        self._append_enum_decls(body_lines)
-        body_lines.append(f"class {self._plan.ifc_name} {{")
-        body_lines.append("public:")
-        body_lines.append(f"  virtual ~{self._plan.ifc_name}() = default;")
-        body_lines.append("")
-        self._append_surface_methods(
-            body_lines,
-            lambda planned: planned.in_ifc,
-            lambda spec: body_lines.append(f"  virtual {spec.decl} = 0;"),
+        public_methods, protected_methods, private_methods = self._group_surface_methods(
+            lambda planned: planned.in_ifc
         )
-        body_lines.append("};")
-        return self._render_header(self._plan.include_list, body_lines)
+        return self._render_template(
+            "ifc_header.hpp.j2",
+            includes=self._plan.include_list,
+            namespace_name=self._plan.namespace_name,
+            proto_enums=self._plan.proto_enums,
+            ifc_name=self._plan.ifc_name,
+            public_methods=public_methods,
+            protected_methods=protected_methods,
+            private_methods=private_methods,
+        )
 
     def render_api_header_content(self) -> str:
-        body_lines: List[str] = []
-        body_lines.append(
-            f"class {self._plan.api_name} : public {self._plan.ifc_name} {{"
+        public_methods, protected_methods, private_methods = self._group_surface_methods(
+            lambda planned: planned.in_api
         )
-        body_lines.append("public:")
-        body_lines.append(
-            f"  explicit {self._plan.api_name}({self._plan.ifc_name}& impl) : impl_(impl) {{}}"
+        return self._render_template(
+            "api_header.hpp.j2",
+            includes=self._plan.api_includes,
+            namespace_name=self._plan.namespace_name,
+            ifc_name=self._plan.ifc_name,
+            api_name=self._plan.api_name,
+            public_methods=public_methods,
+            protected_methods=protected_methods,
+            private_methods=private_methods,
         )
-        body_lines.append("")
-        self._append_surface_methods(
-            body_lines,
-            lambda planned: planned.in_api,
-            lambda spec: self._append_forwarding_method(body_lines, spec, "impl_"),
-        )
-        body_lines.append("private:")
-        body_lines.append(f"  {self._plan.ifc_name}& impl_;")
-        body_lines.append("};")
-        return self._render_header(self._plan.api_includes, body_lines)
 
     def render_service_header_content(self) -> str:
-        body_lines: List[str] = []
-        body_lines.append(
-            self._class_decl(
-                self._plan.service_name,
-                self._plan.service_base_ifc_class_names,
-            )
+        public_methods, protected_methods, private_methods = self._group_surface_methods(
+            lambda planned: planned.in_service
         )
-        body_lines.append("public:")
-        body_lines.append(f"  virtual ~{self._plan.service_name}() = default;")
-        body_lines.append("")
-        self._append_surface_methods(
-            body_lines,
-            lambda planned: planned.in_service,
-            lambda spec: body_lines.append(f"  virtual {spec.decl} = 0;"),
+        return self._render_template(
+            "service_header.hpp.j2",
+            includes=self._plan.service_includes,
+            namespace_name=self._plan.namespace_name,
+            service_name=self._plan.service_name,
+            service_base_ifc_class_names=self._plan.service_base_ifc_class_names,
+            public_methods=public_methods,
+            protected_methods=protected_methods,
+            private_methods=private_methods,
         )
-        body_lines.append("};")
-        return self._render_header(self._plan.service_includes, body_lines)
 
     def render_service_impl_header_content(self) -> str:
-        body_lines: List[str] = []
-        if not self._plan.generate_api:
-            body_lines.append(f"class {self._plan.api_name};")
-            body_lines.append("")
-
-        body_lines.append(
-            f"class {self._plan.service_impl_name} : public {self._plan.service_name} {{"
+        public_methods, protected_methods, private_methods = self._group_surface_methods(
+            lambda planned: planned.in_service_impl
         )
-        body_lines.append("public:")
-        body_lines.append(
-            f"  explicit {self._plan.service_impl_name}({self._plan.api_name}& api) : {self._plan.api_member_name}(api) {{}}"
+        return self._render_template(
+            "service_impl_header.hpp.j2",
+            includes=self._plan.service_impl_includes,
+            namespace_name=self._plan.namespace_name,
+            generate_api=self._plan.generate_api,
+            api_name=self._plan.api_name,
+            service_name=self._plan.service_name,
+            service_impl_name=self._plan.service_impl_name,
+            api_member_name=self._plan.api_member_name,
+            public_methods=public_methods,
+            protected_methods=protected_methods,
+            private_methods=private_methods,
         )
-        body_lines.append("")
-        self._append_surface_methods(
-            body_lines,
-            lambda planned: planned.in_service_impl,
-            lambda spec: self._append_forwarding_method(
-                body_lines,
-                spec,
-                self._plan.api_member_name,
-                mark_override=True,
-            ),
-        )
-        body_lines.append("private:")
-        body_lines.append(f"  {self._plan.api_name}& {self._plan.api_member_name};")
-        body_lines.append("};")
-        return self._render_header(self._plan.service_impl_includes, body_lines)
 
     def iter_headers(self) -> Iterator[Tuple[str, str]]:
         yield (
@@ -122,47 +115,17 @@ class ServicePlanRenderer:
                 self.render_service_impl_header_content(),
             )
 
-    def _append_enum_decls(self, body_lines: List[str]) -> None:
-        if not self._plan.proto_enums:
-            return
-        for enum_desc in self._plan.proto_enums:
-            body_lines.append(f"typedef enum {enum_desc.name} {{")
-            for value in enum_desc.value:
-                body_lines.append(f"  {value.name} = {value.number},")
-            body_lines.append(f"}} {enum_desc.name};")
-            body_lines.append("")
+    @staticmethod
+    def _render_template(template_name: str, **context) -> str:
+        rendered = _ENV.get_template(template_name).render(**context)
+        if rendered.endswith("\n"):
+            return rendered
+        return f"{rendered}\n"
 
-    def _render_header(self, includes: List[str], body_lines: List[str]) -> str:
-        lines: List[str] = []
-        lines.append("// Generated by protoc-gen-arduinoif. DO NOT EDIT.")
-        lines.append("")
-        lines.append("#pragma once")
-        lines.append("")
-        lines.append("#include <cstddef>")
-        lines.append("#include <cstdint>")
-        for include in includes:
-            lines.append(f"#include <{include}>")
-        lines.append("")
-        if self._plan.namespace_name:
-            lines.append(f"namespace {self._plan.namespace_name} {{")
-            lines.append("")
-        lines.extend(body_lines)
-        if self._plan.namespace_name:
-            lines.append("")
-            lines.append(f"}} // namespace {self._plan.namespace_name}")
-        lines.append("")
-
-        while lines and lines[-1] == "":
-            lines.pop()
-        lines.append("")
-        return "\n".join(lines)
-
-    def _append_surface_methods(
+    def _group_surface_methods(
         self,
-        body_lines: List[str],
         in_surface: Callable[[PlannedMethod], bool],
-        emit_method: Callable[[MethodSpec], None],
-    ) -> None:
+    ) -> Tuple[List[MethodSpec], List[MethodSpec], List[MethodSpec]]:
         public_methods: List[MethodSpec] = []
         protected_methods: List[MethodSpec] = []
         private_methods: List[MethodSpec] = []
@@ -178,48 +141,4 @@ class ServicePlanRenderer:
             else:
                 public_methods.append(spec)
 
-        for spec in public_methods:
-            emit_method(spec)
-
-        if protected_methods:
-            body_lines.append("")
-            body_lines.append("protected:")
-            for spec in protected_methods:
-                emit_method(spec)
-
-        if private_methods:
-            body_lines.append("")
-            body_lines.append("private:")
-            for spec in private_methods:
-                emit_method(spec)
-
-    @staticmethod
-    def _class_decl(class_name: str, base_classes: List[str]) -> str:
-        if not base_classes:
-            return f"class {class_name} {{"
-        bases = ", ".join(f"public {base_class}" for base_class in base_classes)
-        return f"class {class_name} : {bases} {{"
-
-    @staticmethod
-    def _append_forwarding_method(
-        body_lines: List[str],
-        spec: MethodSpec,
-        target_expr: str,
-        *,
-        mark_override: bool = False,
-    ) -> None:
-        signature = f"  {spec.decl}"
-        if spec.suffix:
-            signature += f" {spec.suffix}"
-        if mark_override:
-            signature += " override"
-        body_lines.append(f"{signature} {{")
-
-        call_args = ", ".join(spec.arg_names)
-        call_expr = f"{target_expr}.{spec.call_name}({call_args})"
-        if spec.returns_void:
-            body_lines.append(f"    {call_expr};")
-        else:
-            body_lines.append(f"    return {call_expr};")
-        body_lines.append("  }")
-        body_lines.append("")
+        return public_methods, protected_methods, private_methods
