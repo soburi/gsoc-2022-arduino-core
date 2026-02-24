@@ -73,6 +73,18 @@ class ServicePlan(NamedTuple):
     generate_service: bool
     generate_service_impl: bool
 
+    @classmethod
+    def build(
+        cls,
+        service,
+        package_name: str,
+        proto_enums: List[EnumDescriptorProto],
+        context,
+    ) -> "ServicePlan":
+        from .service_codegen import build_service_plan
+
+        return build_service_plan(service, package_name, proto_enums, context)
+
 
 from .core import main
 from .request_context import RequestContext, build_request_context, full_service_name

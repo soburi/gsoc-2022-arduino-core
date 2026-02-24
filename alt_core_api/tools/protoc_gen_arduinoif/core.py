@@ -8,9 +8,10 @@ from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 
+from . import ServicePlan
 from .header_render import render_enum_header
 from .request_context import build_request_context
-from .service_codegen import build_service_plan, render_service_headers
+from .service_codegen import render_service_headers
 
 __all__ = [
     "main",
@@ -33,7 +34,7 @@ def _iter_generated_files(
             )
 
         for service in proto_file.service:
-            service_plan = build_service_plan(
+            service_plan = ServicePlan.build(
                 service,
                 proto_file.package,
                 list(proto_file.enum_type),
