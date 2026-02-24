@@ -21,9 +21,6 @@ from . import (
     METHOD_EMIT_SERVICE_TAG,
     METHOD_SOURCE_VIRTUAL_TAG,
     METHOD_VISIBILITY_TAG,
-    MethodSpec,
-    PlannedMethod,
-    ServicePlan,
     SERVICE_BASE_SERVICES_TAG,
     SERVICE_API_CLASS_NAME_TAG,
     SERVICE_API_MEMBER_NAME_TAG,
@@ -44,6 +41,7 @@ from .header_render import (
     render_service_impl_header_content,
 )
 from .request_context import RequestContext, full_service_name
+from .service_plan import MethodSpec, PlannedMethod, ServicePlan
 
 __all__ = [
     "build_service_plan",

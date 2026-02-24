@@ -24,6 +24,12 @@ class RequestContext(NamedTuple):
     requested_files: Set[str]
     requested_basenames: Set[str]
 
+    @classmethod
+    def build(
+        cls, request: plugin_pb2.CodeGeneratorRequest
+    ) -> "RequestContext":
+        return build_request_context(request)
+
     def is_requested_proto(self, proto_name: str) -> bool:
         proto_basename = PurePosixPath(proto_name).name
         return (

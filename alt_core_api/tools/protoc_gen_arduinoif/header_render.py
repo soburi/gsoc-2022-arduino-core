@@ -6,7 +6,7 @@ from typing import Callable, List
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
-from . import MethodSpec, PlannedMethod, ServicePlan
+from .service_plan import MethodSpec, PlannedMethod, ServicePlan
 
 __all__ = [
     "render_enum_header",

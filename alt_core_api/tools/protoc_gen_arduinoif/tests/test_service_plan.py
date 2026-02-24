@@ -17,8 +17,11 @@ from google.protobuf.descriptor_pb2 import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif import METHOD_VISIBILITY_TAG, ServicePlan  # noqa: E402
-from protoc_gen_arduinoif.request_context import build_request_context  # noqa: E402
+from protoc_gen_arduinoif import (  # noqa: E402
+    METHOD_VISIBILITY_TAG,
+    RequestContext,
+    ServicePlan,
+)
 from protoc_gen_arduinoif.service_codegen import (  # noqa: E402
     collect_lineage_methods,
     render_service_headers,
@@ -72,7 +75,7 @@ def _build_request(tmp_path: Path) -> plugin_pb2.CodeGeneratorRequest:
 
 def _hardware_serial_plan(tmp_path: Path):
     request = _build_request(tmp_path)
-    context = build_request_context(request)
+    context = RequestContext.build(request)
 
     target_file = next(
         proto_file

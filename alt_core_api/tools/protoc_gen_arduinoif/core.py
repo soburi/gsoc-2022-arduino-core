@@ -8,10 +8,10 @@ from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 
-from . import ServicePlan
 from .header_render import render_enum_header
-from .request_context import build_request_context
+from .request_context import RequestContext
 from .service_codegen import render_service_headers
+from .service_plan import ServicePlan
 
 __all__ = [
     "main",
@@ -21,7 +21,7 @@ __all__ = [
 def _iter_generated_files(
     request: plugin_pb2.CodeGeneratorRequest,
 ) -> Iterator[Tuple[str, str]]:
-    context = build_request_context(request)
+    context = RequestContext.build(request)
 
     for proto_file in request.proto_file:
         if not context.is_requested_proto(proto_file.name):
