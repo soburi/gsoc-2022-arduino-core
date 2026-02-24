@@ -45,18 +45,6 @@ class ServiceRenderer:
     def __init__(self, model: ServiceModel) -> None:
         self._model = model
 
-    def render_ifc_header_content(self) -> str:
-        return self._render_surface("ifc")
-
-    def render_api_header_content(self) -> str:
-        return self._render_surface("api")
-
-    def render_service_header_content(self) -> str:
-        return self._render_surface("service")
-
-    def render_service_impl_header_content(self) -> str:
-        return self._render_surface("service_impl")
-
     def iter_headers(self) -> Iterator[Tuple[str, str]]:
         for header_attr, surface, gate_attr in _HEADER_ORDER:
             if gate_attr and not getattr(self._model, gate_attr):

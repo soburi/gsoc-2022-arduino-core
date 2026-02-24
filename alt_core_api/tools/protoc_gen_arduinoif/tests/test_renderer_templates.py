@@ -89,23 +89,24 @@ def _sample_model() -> ServiceModel:
 def test_renderer_templates_emit_expected_fragments() -> None:
     model = _sample_model()
     renderer = ServiceRenderer(model)
+    rendered = dict(renderer.iter_headers())
 
-    ifc_content = renderer.render_ifc_header_content()
+    ifc_content = rendered["example_interface.hpp"]
     assert "class ExampleInterface" in ifc_content
     assert "virtual int foo(uint8_t arg0) = 0;" in ifc_content
     assert "typedef enum Mode" in ifc_content
     assert "namespace arduino" in ifc_content
 
-    api_content = renderer.render_api_header_content()
+    api_content = rendered["example_api.hpp"]
     assert "class ExampleApi : public ExampleInterface" in api_content
     assert "return impl_.foo(arg0);" in api_content
     assert "impl_.bar();" in api_content
 
-    service_content = renderer.render_service_header_content()
+    service_content = rendered["example_service.hpp"]
     assert "class ExampleService : public BaseIfc" in service_content
     assert "virtual void baz() = 0;" in service_content
 
-    impl_content = renderer.render_service_impl_header_content()
+    impl_content = rendered["example_service_impl.hpp"]
     assert "class ExampleServiceImpl : public ExampleService" in impl_content
     assert "return api_.foo(arg0);" in impl_content
     assert "api_.baz();" in impl_content
