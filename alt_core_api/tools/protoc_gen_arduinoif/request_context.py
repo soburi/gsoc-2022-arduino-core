@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from pathlib import PurePosixPath
-from typing import Dict, List, NamedTuple, Set
+from typing import Dict, List, NamedTuple, Set, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 from google.protobuf.descriptor_pb2 import DescriptorProto
-
-from . import ServiceIndex
 
 __all__ = [
     "RequestContext",
@@ -17,7 +15,7 @@ __all__ = [
 
 class RequestContext(NamedTuple):
     message_map: Dict[str, DescriptorProto]
-    service_index: ServiceIndex
+    service_index: Dict[str, Tuple[object, str]]
     lineage_cache: Dict[str, List[str]]
     requested_files: Set[str]
     requested_basenames: Set[str]
@@ -27,7 +25,7 @@ class RequestContext(NamedTuple):
         cls, request: plugin_pb2.CodeGeneratorRequest
     ) -> "RequestContext":
         message_map: Dict[str, DescriptorProto] = {}
-        service_index: ServiceIndex = {}
+        service_index: Dict[str, Tuple[object, str]] = {}
 
         for proto_file in request.proto_file:
             prefix = f".{proto_file.package}" if proto_file.package else ""

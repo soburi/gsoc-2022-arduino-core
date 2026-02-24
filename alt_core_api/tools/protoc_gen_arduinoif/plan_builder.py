@@ -11,7 +11,7 @@ from google.protobuf.descriptor_pb2 import (
     FieldDescriptorProto,
 )
 
-from . import MethodSpec, PlannedMethod, ServiceIndex
+from . import MethodSpec, PlannedMethod
 from .request_context import RequestContext
 from .service_plan import ServicePlan
 
@@ -237,7 +237,7 @@ class ServicePlanBuilder:
     def _collect_lineage_methods(
         cls,
         lineage: List[str],
-        service_index: ServiceIndex,
+        service_index: Dict[str, Tuple[object, str]],
         message_map: Dict[str, DescriptorProto],
     ) -> List[MethodSpec]:
         by_decl: Dict[str, MethodSpec] = {}

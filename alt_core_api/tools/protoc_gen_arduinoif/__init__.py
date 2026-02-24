@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, NamedTuple, Tuple
-
-ServiceDescriptor = Tuple[object, str]
-ServiceIndex = Dict[str, ServiceDescriptor]
+from typing import List, NamedTuple
 
 
 class MethodSpec(NamedTuple):
@@ -33,8 +30,6 @@ from .request_context import RequestContext
 from .core import main
 
 __all__ = [
-    "ServiceDescriptor",
-    "ServiceIndex",
     "main",
     "MethodSpec",
     "PlannedMethod",
