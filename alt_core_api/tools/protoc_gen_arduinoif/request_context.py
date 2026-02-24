@@ -26,7 +26,26 @@ class RequestContext(NamedTuple):
     def build(
         cls, request: plugin_pb2.CodeGeneratorRequest
     ) -> "RequestContext":
-        return _RequestContextBuilder(request).build()
+        message_map: Dict[str, DescriptorProto] = {}
+        service_index: ServiceIndex = {}
+
+        for proto_file in request.proto_file:
+            prefix = f".{proto_file.package}" if proto_file.package else ""
+            for message in proto_file.message_type:
+                cls._add_message(message_map, prefix, "", message)
+            for service in proto_file.service:
+                full_name = cls.full_service_name(proto_file.package, service.name)
+                service_index[full_name] = (service, proto_file.package)
+
+        requested_files = set(request.file_to_generate)
+        requested_basenames = {PurePosixPath(name).name for name in requested_files}
+        return RequestContext(
+            message_map=message_map,
+            service_index=service_index,
+            lineage_cache={},
+            requested_files=requested_files,
+            requested_basenames=requested_basenames,
+        )
 
     @staticmethod
     def full_service_name(package_name: str, service_name: str) -> str:
@@ -39,35 +58,6 @@ class RequestContext(NamedTuple):
         return (
             proto_name in self.requested_files
             or proto_basename in self.requested_basenames
-        )
-
-
-class _RequestContextBuilder:
-    def __init__(self, request: plugin_pb2.CodeGeneratorRequest) -> None:
-        self._request = request
-
-    def build(self) -> RequestContext:
-        message_map: Dict[str, DescriptorProto] = {}
-        service_index: ServiceIndex = {}
-
-        for proto_file in self._request.proto_file:
-            prefix = f".{proto_file.package}" if proto_file.package else ""
-            for message in proto_file.message_type:
-                self._add_message(message_map, prefix, "", message)
-            for service in proto_file.service:
-                full_name = RequestContext.full_service_name(
-                    proto_file.package, service.name
-                )
-                service_index[full_name] = (service, proto_file.package)
-
-        requested_files = set(self._request.file_to_generate)
-        requested_basenames = {PurePosixPath(name).name for name in requested_files}
-        return RequestContext(
-            message_map=message_map,
-            service_index=service_index,
-            lineage_cache={},
-            requested_files=requested_files,
-            requested_basenames=requested_basenames,
         )
 
     @staticmethod
@@ -85,7 +75,4 @@ class _RequestContextBuilder:
 
         child_parent = full_name[len(package_prefix) + 1 :]
         for nested in message.nested_type:
-            _RequestContextBuilder._add_message(
-                message_map, package_prefix, child_parent, nested
-            )
-
+            RequestContext._add_message(message_map, package_prefix, child_parent, nested)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple
+from typing import Dict, List, NamedTuple, Tuple
 
 FIELD_CPP_TYPE_TAG = 50001
 FIELD_CPP_NAME_TAG = 50002
@@ -28,7 +28,27 @@ SERVICE_EXTRA_INCLUDES_TAG = 50218
 ServiceDescriptor = Tuple[object, str]
 ServiceIndex = Dict[str, ServiceDescriptor]
 
-from .service_plan import MethodSpec, PlannedMethod, ServicePlan
+
+class MethodSpec(NamedTuple):
+    decl: str
+    call_name: str
+    arg_names: List[str]
+    suffix: str
+    returns_void: bool
+    source_virtual: bool
+    emit_api: bool
+    emit_service: bool
+    visibility: str
+
+
+class PlannedMethod(NamedTuple):
+    spec: MethodSpec
+    in_ifc: bool
+    in_api: bool
+    in_service: bool
+    in_service_impl: bool
+
+from .service_plan import ServicePlan
 from .request_context import RequestContext
 from .core import main
 
