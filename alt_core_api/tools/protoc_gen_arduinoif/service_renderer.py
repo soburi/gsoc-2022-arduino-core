@@ -51,6 +51,10 @@ class ServiceRenderer:
                 continue
             yield getattr(self._model, header_attr), self._render_surface(surface)
 
+    def _render_template(self, template_name: str, **context) -> str:
+        rendered = _ENV.get_template(template_name).render(**context)
+        return rendered if rendered.endswith("\n") else f"{rendered}\n"
+
     def _render_surface(self, surface: str) -> str:
         template, include_attr, method_attr = _SURFACES[surface]
         public_methods, protected_methods, private_methods = (
@@ -90,11 +94,6 @@ class ServiceRenderer:
             "service_impl_name": self._model.service_impl_name,
             "api_member_name": self._model.api_member_name,
         }
-
-    @staticmethod
-    def _render_template(template_name: str, **context) -> str:
-        rendered = _ENV.get_template(template_name).render(**context)
-        return rendered if rendered.endswith("\n") else f"{rendered}\n"
 
     def _group_surface_methods(
         self,
