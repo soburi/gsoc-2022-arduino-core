@@ -6,7 +6,6 @@ from typing import Callable, List
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
-from .descriptors import class_decl
 from .model import MethodSpec, PlannedMethod, ServicePlan
 
 __all__ = [
@@ -16,6 +15,14 @@ __all__ = [
     "render_service_header_content",
     "render_service_impl_header_content",
 ]
+
+
+def _class_decl(class_name: str, base_classes: List[str]) -> str:
+    if not base_classes:
+        return f"class {class_name} {{"
+    bases = ", ".join(f"public {base_class}" for base_class in base_classes)
+    return f"class {class_name} : {bases} {{"
+
 
 class _ServicePlanRenderer:
     def __init__(self, plan: ServicePlan) -> None:
@@ -59,7 +66,7 @@ class _ServicePlanRenderer:
     def render_service_header_content(self) -> str:
         body_lines: List[str] = []
         body_lines.append(
-            class_decl(
+            _class_decl(
                 self._plan.service_name,
                 self._plan.service_base_ifc_class_names,
             )

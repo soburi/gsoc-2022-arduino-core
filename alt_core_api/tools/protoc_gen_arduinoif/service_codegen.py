@@ -2,28 +2,24 @@
 
 from __future__ import annotations
 
-from typing import Iterator, List, NamedTuple, Tuple
+from pathlib import PurePosixPath
+from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
 from .constants import (
+    SERVICE_BASE_SERVICES_TAG,
     SERVICE_API_CLASS_NAME_TAG,
     SERVICE_API_MEMBER_NAME_TAG,
+    SERVICE_EXTRA_INCLUDES_TAG,
     SERVICE_GENERATE_API_CLASS_TAG,
     SERVICE_GENERATE_SERVICE_CLASS_TAG,
     SERVICE_GENERATE_SERVICE_IMPL_CLASS_TAG,
+    SERVICE_IFC_HEADER_NAME_TAG,
     SERVICE_IFC_CLASS_NAME_TAG,
+    SERVICE_SERVICE_CLASS_NAME_TAG,
     SERVICE_SERVICE_IMPL_CLASS_NAME_TAG,
-)
-from .descriptors import (
-    collect_lineage_includes,
-    collect_service_lineage,
-    cpp_namespace_from_package,
-    dedupe_ordered,
-    ifc_class_name,
-    service_class_name,
-    service_header_name,
-    service_header_stem,
+    ServiceIndex,
 )
 from .header_render import (
     render_api_header_content,
@@ -34,12 +30,144 @@ from .header_render import (
 from .method_specs import collect_lineage_methods
 from .model import PlannedMethod, ServicePlan
 from .request_context import RequestContext, full_service_name
-from .wire_options import get_bool_option, get_string_option
+from .wire_options import get_bool_option, get_string_list_option, get_string_option
 
 __all__ = [
     "build_service_plan",
     "render_service_headers",
 ]
+
+
+def _dedupe_ordered(items: List[str]) -> List[str]:
+    seen = set()
+    result: List[str] = []
+    for item in items:
+        if item in seen:
+            continue
+        seen.add(item)
+        result.append(item)
+    return result
+
+
+def _resolve_service_reference(
+    reference: str,
+    current_package: str,
+    service_index: ServiceIndex,
+) -> str:
+    if reference.startswith("."):
+        candidate = reference
+    elif "." in reference:
+        candidate = f".{reference}"
+    elif current_package:
+        candidate = f".{current_package}.{reference}"
+    else:
+        candidate = f".{reference}"
+
+    if candidate in service_index:
+        return candidate
+
+    raise ValueError(
+        f"service '{candidate}' not found for base_services entry '{reference}'"
+    )
+
+
+def _collect_service_lineage(
+    service_full_name: str,
+    service_index: ServiceIndex,
+    lineage_cache: Dict[str, List[str]],
+    visiting: Optional[List[str]] = None,
+) -> List[str]:
+    if service_full_name in lineage_cache:
+        return lineage_cache[service_full_name]
+    if visiting is None:
+        visiting = []
+    if service_full_name in visiting:
+        cycle = " -> ".join([*visiting, service_full_name])
+        raise ValueError(f"cyclic service inheritance detected: {cycle}")
+
+    entry = service_index.get(service_full_name)
+    if entry is None:
+        raise ValueError(f"service '{service_full_name}' not found")
+    service, package_name = entry
+    base_refs = get_string_list_option(service.options, SERVICE_BASE_SERVICES_TAG)
+
+    inherited: List[str] = []
+    for base_ref in base_refs:
+        base_full_name = _resolve_service_reference(
+            base_ref, package_name, service_index
+        )
+        inherited.extend(
+            _collect_service_lineage(
+                base_full_name,
+                service_index,
+                lineage_cache,
+                [*visiting, service_full_name],
+            )
+        )
+    inherited.append(service_full_name)
+    lineage = _dedupe_ordered(inherited)
+    lineage_cache[service_full_name] = lineage
+    return lineage
+
+
+def _collect_lineage_includes(
+    lineage: List[str],
+    service_index: ServiceIndex,
+) -> List[str]:
+    includes: List[str] = []
+    for service_full_name in lineage:
+        service, _ = service_index[service_full_name]
+        includes.extend(
+            get_string_list_option(service.options, SERVICE_EXTRA_INCLUDES_TAG)
+        )
+    return _dedupe_ordered(includes)
+
+
+def _service_class_name(service) -> str:
+    return (
+        get_string_option(service.options, SERVICE_SERVICE_CLASS_NAME_TAG).strip()
+        or f"{service.name}Service"
+    )
+
+
+def _ifc_class_name(service) -> str:
+    return (
+        get_string_option(service.options, SERVICE_IFC_CLASS_NAME_TAG).strip()
+        or f"{service.name}Interface"
+    )
+
+
+def _service_header_name(service) -> str:
+    header_name = get_string_option(
+        service.options, SERVICE_IFC_HEADER_NAME_TAG
+    ).strip()
+    if header_name:
+        return header_name
+    return f"{_snake_case(service.name)}_interface.hpp"
+
+
+def _service_header_stem(service) -> str:
+    ifc_header = _service_header_name(service)
+    suffix = "_interface.hpp"
+    if ifc_header.endswith(suffix):
+        return ifc_header[: -len(suffix)]
+    return PurePosixPath(ifc_header).stem
+
+
+def _cpp_namespace_from_package(package_name: str) -> str:
+    return "::".join(part for part in package_name.split(".") if part)
+
+
+def _snake_case(name: str) -> str:
+    chars: List[str] = []
+    for index, char in enumerate(name):
+        if char.isupper() and index > 0 and (
+            not name[index - 1].isupper()
+            or (index + 1 < len(name) and name[index + 1].islower())
+        ):
+            chars.append("_")
+        chars.append(char.lower())
+    return "".join(chars)
 
 
 class _ResolvedServiceOptions(NamedTuple):
@@ -76,7 +204,7 @@ class _ServicePlanBuilder:
             self._context.service_index,
             self._context.message_map,
         )
-        lineage = collect_service_lineage(
+        lineage = _collect_service_lineage(
             self._service_full_name,
             self._context.service_index,
             self._context.lineage_cache,
@@ -114,20 +242,20 @@ class _ServicePlanBuilder:
             service_impl_callable,
         )
 
-        include_list = dedupe_ordered(
-            collect_lineage_includes(lineage, self._context.service_index)
+        include_list = _dedupe_ordered(
+            _collect_lineage_includes(lineage, self._context.service_index)
         )
         service_base_ifc_class_names: List[str] = []
         service_base_ifc_header_names: List[str] = []
         for ancestor_full_name in ancestor_services:
             ancestor_service, _ = self._context.service_index[ancestor_full_name]
-            service_base_ifc_class_names.append(ifc_class_name(ancestor_service))
-            service_base_ifc_header_names.append(service_header_name(ancestor_service))
-        service_base_ifc_class_names = dedupe_ordered(service_base_ifc_class_names)
-        service_base_ifc_header_names = dedupe_ordered(service_base_ifc_header_names)
+            service_base_ifc_class_names.append(_ifc_class_name(ancestor_service))
+            service_base_ifc_header_names.append(_service_header_name(ancestor_service))
+        service_base_ifc_class_names = _dedupe_ordered(service_base_ifc_class_names)
+        service_base_ifc_header_names = _dedupe_ordered(service_base_ifc_header_names)
 
-        stem = service_header_stem(self._service)
-        ifc_header = service_header_name(self._service)
+        stem = _service_header_stem(self._service)
+        ifc_header = _service_header_name(self._service)
         api_header = f"{stem}_api.hpp"
         service_header = f"{stem}_service.hpp"
         service_impl_header = f"{stem}_service_impl.hpp"
@@ -136,11 +264,11 @@ class _ServicePlanBuilder:
 
         service_includes: List[str] = []
         if options.generate_service:
-            service_includes = dedupe_ordered(
+            service_includes = _dedupe_ordered(
                 [*service_base_ifc_header_names, *include_list]
             )
             if self._proto_enums:
-                service_includes = dedupe_ordered([ifc_header, *service_includes])
+                service_includes = _dedupe_ordered([ifc_header, *service_includes])
 
         service_impl_includes: List[str] = []
         if options.generate_service_impl:
@@ -153,7 +281,7 @@ class _ServicePlanBuilder:
             api_includes=api_includes,
             service_includes=service_includes,
             service_impl_includes=service_impl_includes,
-            namespace_name=cpp_namespace_from_package(self._package_name),
+            namespace_name=_cpp_namespace_from_package(self._package_name),
             proto_enums=self._proto_enums,
             ifc_name=options.ifc_name,
             api_name=options.api_name,
@@ -194,7 +322,7 @@ class _ServicePlanBuilder:
         return _ResolvedServiceOptions(
             ifc_name=ifc_name,
             api_name=api_name,
-            service_name=service_class_name(self._service),
+            service_name=_service_class_name(self._service),
             service_impl_name=service_impl_name,
             api_member_name=api_member_name,
             generate_api=get_bool_option(

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import sys
+from pathlib import PurePosixPath
 from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 
-from .descriptors import types_header_name_for_proto
 from .header_render import render_enum_header
 from .request_context import build_request_context
 from .service_codegen import build_service_plan, render_service_headers
@@ -28,7 +28,7 @@ def _iter_generated_files(
 
         if proto_file.enum_type and not proto_file.service:
             yield (
-                types_header_name_for_proto(proto_file.name),
+                _types_header_name_for_proto(proto_file.name),
                 render_enum_header(list(proto_file.enum_type)),
             )
 
@@ -40,6 +40,10 @@ def _iter_generated_files(
                 context,
             )
             yield from render_service_headers(service_plan)
+
+
+def _types_header_name_for_proto(proto_file_name: str) -> str:
+    return f"{PurePosixPath(proto_file_name).stem}_types.h"
 
 
 def main() -> int:
