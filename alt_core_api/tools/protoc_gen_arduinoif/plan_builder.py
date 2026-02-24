@@ -20,35 +20,6 @@ __all__ = [
 ]
 
 
-def _has_extension(options, extension) -> bool:
-    try:
-        return options.HasExtension(extension)
-    except (AttributeError, KeyError):
-        return False
-
-
-def _get_string(options, extension) -> str:
-    if not _has_extension(options, extension):
-        return ""
-    value = options.Extensions[extension]
-    return str(value)
-
-
-def _get_string_list(options, extension) -> List[str]:
-    values: List[str] = []
-    for value in options.Extensions[extension]:
-        text = str(value).strip()
-        if text:
-            values.append(text)
-    return values
-
-
-def _get_bool(options, extension, default: bool) -> bool:
-    if not _has_extension(options, extension):
-        return default
-    return bool(options.Extensions[extension])
-
-
 class _ResolvedServiceOptions(NamedTuple):
     ifc_name: str
     api_name: str
@@ -68,17 +39,33 @@ class ServicePlanBuilder:
             self._options = options
             self._arduino_opts_pb2 = arduino_opts_pb2
 
+        def _has_extension(self, extension) -> bool:
+            try:
+                return self._options.HasExtension(extension)
+            except (AttributeError, KeyError):
+                return False
+
         def string(self, extension_name: str) -> str:
             extension = getattr(self._arduino_opts_pb2, extension_name)
-            return _get_string(self._options, extension)
+            if not self._has_extension(extension):
+                return ""
+            value = self._options.Extensions[extension]
+            return str(value)
 
         def string_list(self, extension_name: str) -> List[str]:
             extension = getattr(self._arduino_opts_pb2, extension_name)
-            return _get_string_list(self._options, extension)
+            values: List[str] = []
+            for value in self._options.Extensions[extension]:
+                text = str(value).strip()
+                if text:
+                    values.append(text)
+            return values
 
         def bool(self, extension_name: str, default: bool = False) -> bool:
             extension = getattr(self._arduino_opts_pb2, extension_name)
-            return _get_bool(self._options, extension, default)
+            if not self._has_extension(extension):
+                return default
+            return bool(self._options.Extensions[extension])
 
     _default_types = {
         FieldDescriptorProto.TYPE_BOOL: "bool",
