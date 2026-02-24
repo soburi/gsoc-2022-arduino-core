@@ -17,8 +17,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif.plan_builder import (  # noqa: E402
-    _OptionsView,
     arduino_opts_pb2,
+    ServicePlanBuilder,
 )
 
 
@@ -66,8 +66,8 @@ def test_method_and_service_options_from_extensions(tmp_path: Path) -> None:
     )
     begin_baud = next(method for method in service.method if method.name == "BeginBaud")
 
-    service_opts = _OptionsView(service.options)
-    method_opts = _OptionsView(begin_baud.options)
+    service_opts = ServicePlanBuilder._OptionsView(service.options)
+    method_opts = ServicePlanBuilder._OptionsView(begin_baud.options)
 
     assert service_opts.bool("generate_api_class", False) is True
     assert service_opts.string_list("base_services") == ["Stream"]
@@ -89,7 +89,7 @@ def test_field_option_accessors() -> None:
     field.number = 1
     field.type = FieldDescriptorProto.TYPE_UINT32
 
-    field_opts = _OptionsView(field.options)
+    field_opts = ServicePlanBuilder._OptionsView(field.options)
     assert field_opts.string("cpp_type") == ""
     assert field_opts.string("field_cpp_name") == ""
 

@@ -139,23 +139,6 @@ def _get_bool(options, extension, default: bool) -> bool:
     return bool(options.Extensions[extension])
 
 
-class _OptionsView:
-    def __init__(self, options) -> None:
-        self._options = options
-
-    def string(self, extension_name: str) -> str:
-        extension = getattr(arduino_opts_pb2, extension_name)
-        return _get_string(self._options, extension)
-
-    def string_list(self, extension_name: str) -> List[str]:
-        extension = getattr(arduino_opts_pb2, extension_name)
-        return _get_string_list(self._options, extension)
-
-    def bool(self, extension_name: str, default: bool = False) -> bool:
-        extension = getattr(arduino_opts_pb2, extension_name)
-        return _get_bool(self._options, extension, default)
-
-
 class _ResolvedServiceOptions(NamedTuple):
     ifc_name: str
     api_name: str
@@ -168,6 +151,22 @@ class _ResolvedServiceOptions(NamedTuple):
 
 
 class ServicePlanBuilder:
+    class _OptionsView:
+        def __init__(self, options) -> None:
+            self._options = options
+
+        def string(self, extension_name: str) -> str:
+            extension = getattr(arduino_opts_pb2, extension_name)
+            return _get_string(self._options, extension)
+
+        def string_list(self, extension_name: str) -> List[str]:
+            extension = getattr(arduino_opts_pb2, extension_name)
+            return _get_string_list(self._options, extension)
+
+        def bool(self, extension_name: str, default: bool = False) -> bool:
+            extension = getattr(arduino_opts_pb2, extension_name)
+            return _get_bool(self._options, extension, default)
+
     _default_types = {
         FieldDescriptorProto.TYPE_BOOL: "bool",
         FieldDescriptorProto.TYPE_INT32: "int32_t",
@@ -347,7 +346,7 @@ class ServicePlanBuilder:
     def _method_spec_from_descriptor(
         cls, method, message_map: Dict[str, DescriptorProto]
     ) -> MethodSpec:
-        options = _OptionsView(method.options)
+        options = cls._OptionsView(method.options)
         source_virtual = options.bool("source_virtual", True)
         emit_api = options.bool("emit_api", True)
         emit_service = options.bool("emit_service", True)
@@ -385,7 +384,7 @@ class ServicePlanBuilder:
     def _resolved_return_type(
         cls, method, message_map: Dict[str, DescriptorProto]
     ) -> str:
-        return_type = _OptionsView(method.options).string("cpp_return").strip()
+        return_type = cls._OptionsView(method.options).string("cpp_return").strip()
         if return_type:
             return return_type
 
@@ -402,7 +401,7 @@ class ServicePlanBuilder:
 
     @staticmethod
     def _resolved_method_name(method) -> str:
-        method_name = _OptionsView(method.options).string("cpp_name").strip()
+        method_name = ServicePlanBuilder._OptionsView(method.options).string("cpp_name").strip()
         if method_name:
             return method_name
         return method.name
@@ -445,14 +444,14 @@ class ServicePlanBuilder:
 
     @classmethod
     def _resolved_field_type(cls, field: FieldDescriptorProto) -> str:
-        param_type = _OptionsView(field.options).string("cpp_type").strip()
+        param_type = cls._OptionsView(field.options).string("cpp_type").strip()
         if param_type:
             return param_type
         return cls._field_type(field)
 
     @staticmethod
     def _resolved_field_name(field: FieldDescriptorProto) -> str:
-        param_name = _OptionsView(field.options).string("field_cpp_name").strip()
+        param_name = ServicePlanBuilder._OptionsView(field.options).string("field_cpp_name").strip()
         if param_name:
             return param_name
         return field.name
@@ -462,7 +461,7 @@ class ServicePlanBuilder:
         return cls._default_types.get(field.type, "int32_t")
 
     def _resolve_options(self) -> _ResolvedServiceOptions:
-        options = _OptionsView(self._service.options)
+        options = self._OptionsView(self._service.options)
         ifc_name = options.string("ifc_class_name").strip() or f"{self._service.name}Interface"
         api_name = options.string("api_class_name").strip() or f"{self._service.name}Api"
         service_impl_name = (
@@ -540,7 +539,7 @@ class ServicePlanBuilder:
         if entry is None:
             raise ValueError(f"service '{service_full_name}' not found")
         service, package_name = entry
-        base_refs = _OptionsView(service.options).string_list("base_services")
+        base_refs = self._OptionsView(service.options).string_list("base_services")
 
         inherited: List[str] = []
         for base_ref in base_refs:
@@ -581,20 +580,20 @@ class ServicePlanBuilder:
         includes: List[str] = []
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
-            includes.extend(_OptionsView(service.options).string_list("extra_includes"))
+            includes.extend(self._OptionsView(service.options).string_list("extra_includes"))
         return self._dedupe_ordered(includes)
 
     @staticmethod
     def _service_class_name(service) -> str:
-        return _OptionsView(service.options).string("service_class_name").strip() or f"{service.name}Service"
+        return ServicePlanBuilder._OptionsView(service.options).string("service_class_name").strip() or f"{service.name}Service"
 
     @staticmethod
     def _ifc_class_name(service) -> str:
-        return _OptionsView(service.options).string("ifc_class_name").strip() or f"{service.name}Interface"
+        return ServicePlanBuilder._OptionsView(service.options).string("ifc_class_name").strip() or f"{service.name}Interface"
 
     @classmethod
     def _service_header_name(cls, service) -> str:
-        header_name = _OptionsView(service.options).string("ifc_header_name").strip()
+        header_name = cls._OptionsView(service.options).string("ifc_header_name").strip()
         if header_name:
             return header_name
         return f"{cls._snake_case(service.name)}_interface.hpp"
