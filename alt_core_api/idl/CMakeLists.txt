@@ -11,7 +11,7 @@ set(ARDUINO_IDL_CLASS_PROTO_FILES
 )
 set(ARDUINO_IDL_OPTS_PROTO ${ARDUINO_IDL_PROTO_DIR}/arduino_opts.proto)
 set(ARDUINO_IDL_OPTS_PB2_SCRIPT
-  ${CMAKE_CURRENT_SOURCE_DIR}/../tools/protoc_gen_arduinoif/scripts/regenerate_arduino_opts_pb2.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/../tools/protoc_gen_arduinoif/scripts/regenerate_arduino_opts_pb2.py
 )
 set(ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR
   ${CMAKE_CURRENT_BINARY_DIR}/generated/protoc_gen_arduinoif
@@ -64,7 +64,7 @@ add_custom_command(
   OUTPUT ${ARDUINO_IDL_OPTS_PB2_OUTPUT}
   COMMAND ${CMAKE_COMMAND} -E env
     PROTOC_GEN_ARDUINOIF_PB2_OUT_DIR=${ARDUINO_IDL_OPTS_PB2_OUTPUT_DIR}
-    /bin/bash ${ARDUINO_IDL_OPTS_PB2_SCRIPT}
+    /home/crs/zephyrproject/.venv/bin/python ${ARDUINO_IDL_OPTS_PB2_SCRIPT}
   DEPENDS
     ${ARDUINO_IDL_OPTS_PROTO}
     ${ARDUINO_IDL_OPTS_PB2_SCRIPT}
