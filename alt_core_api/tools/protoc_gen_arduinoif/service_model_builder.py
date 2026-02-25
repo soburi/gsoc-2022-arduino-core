@@ -92,16 +92,8 @@ class ServiceModelBuilder:
         self._package_name = package_name
         self._proto_enums = proto_enums
         self._context = context
-        self._opts_pb2 = self.load_options_module()
+        self._opts_pb2 = get_arduino_opts_pb2()
         self._service_full_name = full_service_name(package_name, service.name)
-
-    @classmethod
-    def load_options_module(cls):
-        return get_arduino_opts_pb2()
-
-    @classmethod
-    def clear_options_module_cache(cls) -> None:
-        get_arduino_opts_pb2.cache_clear()
 
     @staticmethod
     def _options_view(options):
