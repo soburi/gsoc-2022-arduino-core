@@ -4,19 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 from google.protobuf.compiler import plugin_pb2
-from google.protobuf.descriptor_pb2 import DescriptorProto, ServiceDescriptorProto
+from google.protobuf.descriptor_pb2 import DescriptorProto
 
-from .common import full_service_name
+from .common import ServiceDescriptor, full_service_name
 
 __all__ = [
     "RequestContext",
 ]
-
-ServiceDescriptor = Tuple[ServiceDescriptorProto, str]
-
 
 @dataclass
 class RequestContext:

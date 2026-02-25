@@ -7,13 +7,14 @@ import os
 import types
 from functools import lru_cache
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Tuple
 
-from google.protobuf.descriptor_pb2 import EnumDescriptorProto
+from google.protobuf.descriptor_pb2 import EnumDescriptorProto, ServiceDescriptorProto
 
 __all__ = [
     "full_service_name",
     "get_arduino_opts_pb2",
+    "ServiceDescriptor",
     "MethodSpec",
     "PlannedMethod",
     "ServiceModel",
@@ -62,6 +63,9 @@ def full_service_name(package_name: str, service_name: str) -> str:
     if package_name:
         return f".{package_name}.{service_name}"
     return f".{service_name}"
+
+
+ServiceDescriptor = Tuple[ServiceDescriptorProto, str]
 
 def _load_module_from_path(source_path: Path, module_name: str) -> types.ModuleType:
     spec = importlib.util.spec_from_file_location(module_name, source_path)
