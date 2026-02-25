@@ -55,6 +55,22 @@ class _PlannedMethod(NamedTuple):
     in_service: bool
     in_service_impl: bool
 
+    @classmethod
+    def build(
+        cls,
+        spec: MethodSpec,
+        own_virtual_decls: set[str],
+        service_impl_callable: set[str],
+    ) -> "_PlannedMethod":
+        in_service = spec.emit_service
+        return cls(
+            spec=spec,
+            in_ifc=spec.decl in own_virtual_decls,
+            in_api=spec.emit_api and spec.source_virtual,
+            in_service=in_service,
+            in_service_impl=in_service and spec.call_name in service_impl_callable,
+        )
+
 
 class ServiceModelBuilder:
     class _ResolvedServiceOptions(NamedTuple):
@@ -156,11 +172,10 @@ class ServiceModelBuilder:
             if (options.generate_service_impl and options.generate_api)
             else service_callable
         )
-        methods = self._build_planned_methods(
-            lineage_specs,
-            own_virtual_decls,
-            service_impl_callable,
-        )
+        methods = [
+            _PlannedMethod.build(spec, own_virtual_decls, service_impl_callable)
+            for spec in lineage_specs
+        ]
 
         include_list = self._uniq(self._collect_lineage_includes(lineage))
 
@@ -366,24 +381,3 @@ class ServiceModelBuilder:
     @staticmethod
     def _uniq(values: List[str]) -> List[str]:
         return list(dict.fromkeys(values))
-
-    @staticmethod
-    def _build_planned_methods(
-        lineage_method_specs,
-        own_virtual_decls,
-        service_impl_callable,
-    ) -> List[_PlannedMethod]:
-        methods: List[_PlannedMethod] = []
-        for spec in lineage_method_specs:
-            in_service = spec.emit_service
-            methods.append(
-                _PlannedMethod(
-                    spec=spec,
-                    in_ifc=spec.decl in own_virtual_decls,
-                    in_api=spec.emit_api and spec.source_virtual,
-                    in_service=in_service,
-                    in_service_impl=in_service
-                    and spec.call_name in service_impl_callable,
-                )
-            )
-        return methods
