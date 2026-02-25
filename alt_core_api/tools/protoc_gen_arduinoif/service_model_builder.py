@@ -71,18 +71,18 @@ class _PlannedMethod(NamedTuple):
             in_service_impl=in_service and spec.call_name in service_impl_callable,
         )
 
+class _ResolvedServiceOptions(NamedTuple):
+    ifc_name: str
+    api_name: str
+    service_name: str
+    service_impl_name: str
+    api_member_name: str
+    generate_api: bool
+    generate_service: bool
+    generate_service_impl: bool
+
 
 class ServiceModelBuilder:
-    class _ResolvedServiceOptions(NamedTuple):
-        ifc_name: str
-        api_name: str
-        service_name: str
-        service_impl_name: str
-        api_member_name: str
-        generate_api: bool
-        generate_service: bool
-        generate_service_impl: bool
-
     def __init__(
         self,
         service,
@@ -119,7 +119,7 @@ class ServiceModelBuilder:
         else:
             stem = PurePosixPath(ifc_header).stem
 
-        options = self._ResolvedServiceOptions(
+        options = _ResolvedServiceOptions(
             ifc_name=service_opts.string(self._opts_pb2.ifc_class_name).strip()
             or f"{self._service.name}Interface",
             api_name=service_opts.string(self._opts_pb2.api_class_name).strip()
@@ -255,7 +255,7 @@ class ServiceModelBuilder:
 
     def _validate_generation_flags(
         self,
-        options: ServiceModelBuilder._ResolvedServiceOptions,
+        options: _ResolvedServiceOptions,
     ) -> None:
         if options.generate_service_impl and not options.generate_service:
             raise ValueError(
@@ -264,7 +264,7 @@ class ServiceModelBuilder:
 
     def _validate_api_methods(
         self,
-        options: ServiceModelBuilder._ResolvedServiceOptions,
+        options: _ResolvedServiceOptions,
         lineage_method_specs,
     ) -> None:
         if not options.generate_api:
@@ -282,7 +282,7 @@ class ServiceModelBuilder:
 
     def _validate_service_impl_api_delegate(
         self,
-        options: ServiceModelBuilder._ResolvedServiceOptions,
+        options: _ResolvedServiceOptions,
         lineage_method_specs,
         api_callable,
     ) -> None:
