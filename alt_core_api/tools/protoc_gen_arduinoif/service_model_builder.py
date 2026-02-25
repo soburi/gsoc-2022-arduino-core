@@ -94,9 +94,9 @@ class ServiceModelBuilder:
             package_name, service.name
         )
 
-    @classmethod
-    def _options_view(cls, options):
-        return cls._OptionsView(options)
+    @staticmethod
+    def _options_view(options):
+        return ServiceModelBuilder._OptionsView(options)
 
     @classmethod
     def build(

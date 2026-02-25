@@ -41,6 +41,7 @@ def _iter_generated_files(
 
 
 def main() -> int:
+    # Extensions must be registered before parsing request payload.
     get_arduino_opts_pb2()
     request = plugin_pb2.CodeGeneratorRequest()
     request.ParseFromString(sys.stdin.buffer.read())

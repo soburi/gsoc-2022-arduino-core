@@ -7,17 +7,19 @@ from pathlib import PurePosixPath
 from typing import Dict, List, Set, Tuple
 
 from google.protobuf.compiler import plugin_pb2
-from google.protobuf.descriptor_pb2 import DescriptorProto
+from google.protobuf.descriptor_pb2 import DescriptorProto, ServiceDescriptorProto
 
 __all__ = [
     "RequestContext",
 ]
 
+ServiceDescriptor = Tuple[ServiceDescriptorProto, str]
+
 
 @dataclass
 class RequestContext:
     message_map: Dict[str, DescriptorProto]
-    service_index: Dict[str, Tuple[object, str]]
+    service_index: Dict[str, ServiceDescriptor]
     lineage_cache: Dict[str, List[str]]
     requested_files: Set[str]
     requested_basenames: Set[str]
@@ -25,7 +27,7 @@ class RequestContext:
     @classmethod
     def build(cls, request: plugin_pb2.CodeGeneratorRequest) -> "RequestContext":
         message_map: Dict[str, DescriptorProto] = {}
-        service_index: Dict[str, Tuple[object, str]] = {}
+        service_index: Dict[str, ServiceDescriptor] = {}
 
         for proto_file in request.proto_file:
             prefix = f".{proto_file.package}" if proto_file.package else ""

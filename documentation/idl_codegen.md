@@ -84,33 +84,36 @@ Defined in `alt_core_api/idl/proto/arduino_opts.proto` as `google.protobuf.Metho
 
 Defined as `google.protobuf.ServiceOptions` extensions:
 
-1. `generate_ifc_class`
-2. `generate_api_class`
-3. `generate_service_class`
-4. `generate_service_impl_class`
-5. `ifc_class_name`
-6. `api_class_name`
-7. `service_class_name`
-8. `service_impl_class_name`
-9. `api_member_name`
-10. `base_services`
+1. `generate_api_class`
+2. `generate_service_class`
+3. `generate_service_impl_class`
+4. `ifc_class_name`
+5. `api_class_name`
+6. `service_class_name`
+7. `service_impl_class_name`
+8. `api_member_name`
+9. `base_services`
+10. `ifc_header_name`
+11. `extra_includes`
 
 ### Meaning
 
-1. `generate_ifc_class`
-   Emit `<ServiceName>Ifc` (or overridden class name).
-2. `generate_api_class`
+1. `generate_api_class`
    Emit `<ServiceName>Api` delegate wrapper.
-3. `generate_service_class`
+2. `generate_service_class`
    Emit `<ServiceName>Service` pure virtual class.
-4. `generate_service_impl_class`
+3. `generate_service_impl_class`
    Emit `<ServiceName>ServiceImpl` delegating to `Api`.
-5. `*_class_name`
+4. `*_class_name`
    Override generated class names.
-6. `api_member_name`
+5. `api_member_name`
    Override delegate member name in `ServiceImpl` (default: `api_`).
-7. `base_services`
-   Parent services to inherit from. You can specify a same-package short name (for example `Print`) or a fully-qualified name (for example `arduino.idl.Print` or `.arduino.idl.Print`). Generated `Service` class declarations inherit all ancestor `Ifc` classes (direct and indirect) in lineage order.
+6. `base_services`
+   Parent services to inherit from. You can specify a same-package short name (for example `Print`) or a fully-qualified name (for example `arduino.idl.Print` or `.arduino.idl.Print`). Generated `Service` class declarations inherit all ancestor interface classes (direct and indirect) in lineage order.
+7. `ifc_header_name`
+   Override generated interface header name (default: `<snake_case_service>_interface.hpp`).
+8. `extra_includes`
+   Additional includes emitted to generated headers.
 
 ## Recommended Mapping
 
@@ -129,12 +132,10 @@ Use this mapping for mixed virtual/non-virtual Arduino APIs:
 
 The generator intentionally fails when configuration is inconsistent:
 
-1. `generate_api_class = true` requires `generate_ifc_class = true`
-2. `generate_service_impl_class = true` requires `generate_service_class = true`
-3. `generate_api_class = true` rejects methods with `emit_api = true` and `source_virtual = false`
-4. `generate_service_impl_class = true` with `generate_api_class = true` requires all `Service` methods to be callable on generated `Api`
-5. Cyclic `base_services` references are rejected
-6. If `base_services` is set and `generate_service_class = true`, each ancestor service must also set `generate_ifc_class = true`
+1. `generate_service_impl_class = true` requires `generate_service_class = true`
+2. `generate_api_class = true` rejects methods with `emit_api = true` and `source_virtual = false`
+3. `generate_service_impl_class = true` with `generate_api_class = true` requires all `Service` methods to be callable on generated `Api`
+4. Cyclic `base_services` references are rejected
 
 ## Example
 
@@ -146,7 +147,6 @@ import "arduino_opts.proto";
 import "google/protobuf/empty.proto";
 
 service Demo {
-  option (arduino.generate_ifc_class) = true;
   option (arduino.generate_api_class) = true;
   option (arduino.generate_service_class) = true;
   option (arduino.generate_service_impl_class) = true;
