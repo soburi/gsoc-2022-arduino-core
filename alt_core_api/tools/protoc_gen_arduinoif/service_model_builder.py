@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 from pathlib import PurePosixPath
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional
 
-from google.protobuf.descriptor_pb2 import (
-    EnumDescriptorProto,
-    FieldDescriptorProto,
-)
+from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
 from .common import (
     MethodSpec,
+    OptionsView,
     PlannedMethod,
     ServiceModel,
     full_service_name,
@@ -22,6 +20,8 @@ from .request_context import RequestContext
 __all__ = [
     "ServiceModelBuilder",
 ]
+
+
 class ServiceModelBuilder:
     class _ResolvedServiceOptions(NamedTuple):
         ifc_name: str
@@ -32,54 +32,6 @@ class ServiceModelBuilder:
         generate_api: bool
         generate_service: bool
         generate_service_impl: bool
-
-    class _OptionsView:
-        def __init__(self, options) -> None:
-            self._options = options
-
-        def _has_extension(self, extension) -> bool:
-            try:
-                return self._options.HasExtension(extension)
-            except (AttributeError, KeyError):
-                return False
-
-        def string(self, extension) -> str:
-            if not self._has_extension(extension):
-                return ""
-            return str(self._options.Extensions[extension])
-
-        def string_list(self, extension) -> List[str]:
-            return [
-                text
-                for text in (
-                    str(value).strip() for value in self._options.Extensions[extension]
-                )
-                if text
-            ]
-
-        def bool(self, extension, default: bool = False) -> bool:
-            if not self._has_extension(extension):
-                return default
-            return bool(self._options.Extensions[extension])
-
-    _default_types = {
-        FieldDescriptorProto.TYPE_BOOL: "bool",
-        FieldDescriptorProto.TYPE_INT32: "int32_t",
-        FieldDescriptorProto.TYPE_INT64: "int64_t",
-        FieldDescriptorProto.TYPE_UINT32: "uint32_t",
-        FieldDescriptorProto.TYPE_UINT64: "uint64_t",
-        FieldDescriptorProto.TYPE_SINT32: "int32_t",
-        FieldDescriptorProto.TYPE_SINT64: "int64_t",
-        FieldDescriptorProto.TYPE_FIXED32: "uint32_t",
-        FieldDescriptorProto.TYPE_FIXED64: "uint64_t",
-        FieldDescriptorProto.TYPE_SFIXED32: "int32_t",
-        FieldDescriptorProto.TYPE_SFIXED64: "int64_t",
-        FieldDescriptorProto.TYPE_FLOAT: "float",
-        FieldDescriptorProto.TYPE_DOUBLE: "double",
-        FieldDescriptorProto.TYPE_STRING: "const char *",
-        FieldDescriptorProto.TYPE_BYTES: "const uint8_t *",
-        FieldDescriptorProto.TYPE_ENUM: "int32_t",
-    }
 
     def __init__(
         self,
@@ -95,10 +47,6 @@ class ServiceModelBuilder:
         self._opts_pb2 = get_arduino_opts_pb2()
         self._service_full_name = full_service_name(package_name, service.name)
 
-    @staticmethod
-    def _options_view(options):
-        return ServiceModelBuilder._OptionsView(options)
-
     @classmethod
     def build(
         cls,
@@ -110,7 +58,7 @@ class ServiceModelBuilder:
         return cls(service, package_name, proto_enums, context)._build()
 
     def _build(self) -> ServiceModel:
-        service_opts = self._options_view(self._service.options)
+        service_opts = OptionsView(self._service.options)
 
         ifc_header = (
             service_opts.string(self._opts_pb2.ifc_header_name).strip()
@@ -147,7 +95,11 @@ class ServiceModelBuilder:
         lineage = self._collect_service_lineage(self._service_full_name)
         own_by_decl: Dict[str, MethodSpec] = {}
         for method in self._service.method:
-            spec = self._method_spec_from_descriptor(method)
+            spec = MethodSpec.build(
+                method,
+                opts_pb2=self._opts_pb2,
+                message_map=self._context.message_map,
+            )
             own_by_decl[spec.decl] = spec
         own_virtual_decls = {
             spec.decl for spec in own_by_decl.values() if spec.source_virtual
@@ -182,7 +134,7 @@ class ServiceModelBuilder:
         base_ifc_headers: List[str] = []
         for ancestor_full_name in lineage[:-1]:
             ancestor_service, _ = self._context.service_index[ancestor_full_name]
-            ancestor_opts = self._options_view(ancestor_service.options)
+            ancestor_opts = OptionsView(ancestor_service.options)
             base_ifc_names.append(
                 ancestor_opts.string(self._opts_pb2.ifc_class_name).strip()
                 or f"{ancestor_service.name}Interface"
@@ -244,86 +196,13 @@ class ServiceModelBuilder:
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
             for method in service.method:
-                spec = self._method_spec_from_descriptor(method)
+                spec = MethodSpec.build(
+                    method,
+                    opts_pb2=self._opts_pb2,
+                    message_map=self._context.message_map,
+                )
                 by_decl[spec.decl] = spec
         return list(by_decl.values())
-
-    def _method_spec_from_descriptor(
-        self,
-        method,
-    ) -> MethodSpec:
-        options = self._options_view(method.options)
-        source_virtual = options.bool(self._opts_pb2.source_virtual, True)
-        emit_api = options.bool(self._opts_pb2.emit_api, True)
-        emit_service = options.bool(self._opts_pb2.emit_service, True)
-        visibility = (
-            options.string(self._opts_pb2.method_visibility).strip().lower()
-            or "public"
-        )
-        if visibility not in {"public", "protected", "private"}:
-            raise ValueError(
-                f"{method.name}: unsupported method_visibility '{visibility}' "
-                "(expected: public, protected, private)"
-            )
-
-        method_name = options.string(self._opts_pb2.cpp_name).strip() or method.name
-
-        def resolve_field(field: FieldDescriptorProto) -> Tuple[str, str]:
-            field_opts = self._options_view(field.options)
-            field_type = field_opts.string(
-                self._opts_pb2.cpp_type
-            ).strip() or self._default_types.get(field.type, "int32_t")
-            field_name = (
-                field_opts.string(self._opts_pb2.field_cpp_name).strip() or field.name
-            )
-            return field_type, field_name
-
-        return_type = options.string(self._opts_pb2.cpp_return).strip()
-        if not return_type:
-            output_message = self._context.message_map.get(method.output_type)
-            if output_message is None:
-                return_type = "void"
-            else:
-                return_type = (
-                    resolve_field(output_message.field[0])[0]
-                    if len(output_message.field) == 1
-                    else "void"
-                )
-
-        arg_names: List[str] = []
-        param_decls: List[str] = []
-        arg_types = options.string_list(self._opts_pb2.cpp_arg_types)
-        if arg_types:
-            arg_names = [f"arg{index}" for index in range(len(arg_types))]
-            param_decls = [
-                f"{arg_type} {arg_name}"
-                for arg_type, arg_name in zip(arg_types, arg_names)
-            ]
-        else:
-            input_message = self._context.message_map.get(method.input_type)
-            if input_message is not None:
-                for field in sorted(input_message.field, key=lambda f: f.number):
-                    field_type, field_name = resolve_field(field)
-                    param_decls.append(f"{field_type} {field_name}")
-                    arg_names.append(field_name)
-
-        params_blob = ", ".join(param_decls)
-        decl = (
-            f"{method_name}({params_blob})"
-            if method_name.startswith("operator ")
-            else f"{return_type} {method_name}({params_blob})"
-        )
-
-        return MethodSpec(
-            decl=decl,
-            call_name=method_name,
-            arg_names=arg_names,
-            returns_void=(return_type == "void"),
-            source_virtual=source_virtual,
-            emit_api=emit_api,
-            emit_service=emit_service,
-            visibility=visibility,
-        )
 
     def _validate_generation_flags(
         self,
@@ -390,7 +269,7 @@ class ServiceModelBuilder:
 
         service, package_name = entry
         inherited: List[str] = []
-        for base_ref in self._options_view(service.options).string_list(
+        for base_ref in OptionsView(service.options).string_list(
             self._opts_pb2.base_services
         ):
             base_full_name = self._resolve_service_reference(base_ref, package_name)
@@ -430,9 +309,7 @@ class ServiceModelBuilder:
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
             includes.extend(
-                self._options_view(service.options).string_list(
-                    self._opts_pb2.extra_includes
-                )
+                OptionsView(service.options).string_list(self._opts_pb2.extra_includes)
             )
         return includes
 
