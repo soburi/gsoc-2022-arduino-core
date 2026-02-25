@@ -51,17 +51,18 @@ class ServiceRenderer:
                 continue
             yield getattr(self._model, header_attr), self._render_surface(surface)
 
-    def _render_template(self, template_name: str, **context) -> str:
+    @staticmethod
+    def _render_template(template_name: str, **context) -> str:
         rendered = _ENV.get_template(template_name).render(**context)
         return rendered if rendered.endswith("\n") else f"{rendered}\n"
 
     def _render_surface(self, surface: str) -> str:
         template, include_attr, method_attr = _SURFACES[surface]
         public_methods, protected_methods, private_methods = (
-            self._group_surface_methods(method_attr)
+            ServiceRenderer._group_surface_methods(self._model, method_attr)
         )
 
-        return self._render_template(
+        return ServiceRenderer._render_template(
             template,
             includes=getattr(self._model, include_attr),
             namespace_name=self._model.namespace_name,
@@ -95,23 +96,23 @@ class ServiceRenderer:
             "api_member_name": self._model.api_member_name,
         }
 
+    @staticmethod
     def _group_surface_methods(
-        self,
+        model,
         method_attr: str,
     ) -> Tuple[List[MethodSpec], List[MethodSpec], List[MethodSpec]]:
         public_methods: List[MethodSpec] = []
         protected_methods: List[MethodSpec] = []
         private_methods: List[MethodSpec] = []
 
-        for planned in self._model.methods:
+        for planned in model.methods:
             if not getattr(planned, method_attr):
                 continue
-            spec = planned.spec
-            if spec.visibility == "protected":
-                protected_methods.append(spec)
-            elif spec.visibility == "private":
-                private_methods.append(spec)
+            if planned.spec.visibility == "protected":
+                protected_methods.append(planned.spec)
+            elif planned.spec.visibility == "private":
+                private_methods.append(planned.spec)
             else:
-                public_methods.append(spec)
+                public_methods.append(planned.spec)
 
         return public_methods, protected_methods, private_methods
