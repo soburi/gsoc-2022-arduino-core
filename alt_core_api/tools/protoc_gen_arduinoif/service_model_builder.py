@@ -10,9 +10,10 @@ from google.protobuf.descriptor_pb2 import (
     FieldDescriptorProto,
 )
 
+from .naming import full_service_name
 from .options_runtime import get_arduino_opts_pb2
+from .models import MethodSpec, PlannedMethod, ServiceModel
 from .request_context import RequestContext
-from .service_model import MethodSpec, PlannedMethod, ServiceModel
 
 __all__ = [
     "ServiceModelBuilder",
@@ -90,9 +91,7 @@ class ServiceModelBuilder:
         self._proto_enums = proto_enums
         self._context = context
         self._opts_pb2 = get_arduino_opts_pb2()
-        self._service_full_name = RequestContext.full_service_name(
-            package_name, service.name
-        )
+        self._service_full_name = full_service_name(package_name, service.name)
 
     @staticmethod
     def _options_view(options):
