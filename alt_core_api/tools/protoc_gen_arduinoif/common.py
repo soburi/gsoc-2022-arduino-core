@@ -59,13 +59,13 @@ class ServiceModel(NamedTuple):
     generate_service: bool
     generate_service_impl: bool
 
+ServiceDescriptor = Tuple[ServiceDescriptorProto, str]
+
 def full_service_name(package_name: str, service_name: str) -> str:
     if package_name:
         return f".{package_name}.{service_name}"
     return f".{service_name}"
 
-
-ServiceDescriptor = Tuple[ServiceDescriptorProto, str]
 
 def _load_module_from_path(source_path: Path, module_name: str) -> types.ModuleType:
     spec = importlib.util.spec_from_file_location(module_name, source_path)
