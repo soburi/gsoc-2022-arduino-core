@@ -16,6 +16,8 @@ set(ARDUINO_IDL_SHARED_PROTO_FILES
 set(ARDUINO_IDL_PLUGIN ${CMAKE_CURRENT_SOURCE_DIR}/../tools/protoc-gen-arduinoif)
 set(ARDUINO_IDL_NANOPB_PROTO_DIR ${NANOPB_SRC_ROOT_FOLDER}/generator/proto)
 set(ARDUINO_IDL_IF_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/arduinoif)
+set(ARDUINO_IDL_PB2_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/protoc_gen_arduinoif)
+set(ARDUINO_IDL_PB2_FILE ${ARDUINO_IDL_PB2_OUTPUT_DIR}/arduino_opts_pb2.py)
 set(ARDUINO_IDL_TYPE_HEADERS)
 foreach(proto_file IN LISTS ARDUINO_IDL_SHARED_PROTO_FILES)
   get_filename_component(proto_stem ${proto_file} NAME_WE)
@@ -52,9 +54,24 @@ zephyr_nanopb_sources(arduinocore_idl
 )
 
 add_custom_command(
+  OUTPUT ${ARDUINO_IDL_PB2_FILE}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${ARDUINO_IDL_PB2_OUTPUT_DIR}
+  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    --python_out=${ARDUINO_IDL_PB2_OUTPUT_DIR}
+    --proto_path=${ARDUINO_IDL_PROTO_DIR}
+    ${ARDUINO_IDL_OPTS_PROTO}
+  DEPENDS
+    ${ARDUINO_IDL_OPTS_PROTO}
+  COMMENT "Generating arduino_opts_pb2.py for protoc-gen-arduinoif"
+  VERBATIM
+)
+
+add_custom_command(
   OUTPUT ${ARDUINO_IDL_IF_HEADERS} ${ARDUINO_IDL_TYPE_HEADERS}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARDUINO_IDL_IF_OUTPUT_DIR}
-  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+  COMMAND ${CMAKE_COMMAND} -E env
+    PROTOC_GEN_ARDUINOIF_PB2=${ARDUINO_IDL_PB2_FILE}
+    ${PROTOBUF_PROTOC_EXECUTABLE}
     --plugin=protoc-gen-arduinoif=${ARDUINO_IDL_PLUGIN}
     --arduinoif_out=${ARDUINO_IDL_IF_OUTPUT_DIR}
     --proto_path=${ARDUINO_IDL_PROTO_DIR}
@@ -63,6 +80,7 @@ add_custom_command(
   DEPENDS
     ${ARDUINO_IDL_PLUGIN_INPUT_PROTOS}
     ${ARDUINO_IDL_OPTS_PROTO}
+    ${ARDUINO_IDL_PB2_FILE}
     ${ARDUINO_IDL_PLUGIN}
   COMMENT "Generating C++ interface headers from Arduino IDL proto files"
   VERBATIM

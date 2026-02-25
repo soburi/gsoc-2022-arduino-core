@@ -17,7 +17,6 @@ class MethodSpec(NamedTuple):
     decl: str
     call_name: str
     arg_names: List[str]
-    suffix: str
     returns_void: bool
     source_virtual: bool
     emit_api: bool

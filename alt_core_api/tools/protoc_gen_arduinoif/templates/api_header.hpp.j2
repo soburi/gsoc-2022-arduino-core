@@ -16,7 +16,7 @@ public:
   explicit {{ api_name }}({{ ifc_name }}& impl) : impl_(impl) {}
 
 {% for spec in public_methods %}
-  {{ spec.decl }}{% if spec.suffix %} {{ spec.suffix }}{% endif %} {
+  {{ spec.decl }} {
 {% if spec.returns_void %}
     impl_.{{ spec.call_name }}({{ spec.arg_names | join(', ') }});
 {% else %}
@@ -28,7 +28,7 @@ public:
 {% if protected_methods %}
 protected:
 {% for spec in protected_methods %}
-  {{ spec.decl }}{% if spec.suffix %} {{ spec.suffix }}{% endif %} {
+  {{ spec.decl }} {
 {% if spec.returns_void %}
     impl_.{{ spec.call_name }}({{ spec.arg_names | join(', ') }});
 {% else %}
@@ -41,7 +41,7 @@ protected:
 {% if private_methods %}
 private:
 {% for spec in private_methods %}
-  {{ spec.decl }}{% if spec.suffix %} {{ spec.suffix }}{% endif %} {
+  {{ spec.decl }} {
 {% if spec.returns_void %}
     impl_.{{ spec.call_name }}({{ spec.arg_names | join(', ') }});
 {% else %}

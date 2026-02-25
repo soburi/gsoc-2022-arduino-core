@@ -22,6 +22,8 @@ The generator supports per-method and per-service options in `arduino_opts.proto
 ## Build Integration
 
 `alt_core_api/idl/CMakeLists.txt` already invokes the plugin and emits headers into the build tree.
+The build also generates `arduino_opts_pb2.py` and passes its path via `PROTOC_GEN_ARDUINOIF_PB2`.
+The plugin requires this environment variable and does not generate pb2 at runtime.
 
 ## Processing Model
 
@@ -170,6 +172,7 @@ service Demo {
 ## Command Line Example
 
 ```sh
+export PROTOC_GEN_ARDUINOIF_PB2=/path/to/arduino_opts_pb2.py
 protoc \
   --plugin=protoc-gen-arduinoif=tools/protoc-gen-arduinoif \
   --arduinoif_out=/tmp/arduinoif-gen \

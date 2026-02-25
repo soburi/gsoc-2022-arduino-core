@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, List, NamedTuple, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 from google.protobuf.descriptor_pb2 import DescriptorProto
@@ -13,7 +14,8 @@ __all__ = [
 ]
 
 
-class RequestContext(NamedTuple):
+@dataclass
+class RequestContext:
     message_map: Dict[str, DescriptorProto]
     service_index: Dict[str, Tuple[object, str]]
     lineage_cache: Dict[str, List[str]]
@@ -35,7 +37,7 @@ class RequestContext(NamedTuple):
 
         requested_files = set(request.file_to_generate)
         requested_basenames = {PurePosixPath(name).name for name in requested_files}
-        return RequestContext(
+        return cls(
             message_map=message_map,
             service_index=service_index,
             lineage_cache={},
