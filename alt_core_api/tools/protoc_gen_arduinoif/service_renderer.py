@@ -7,7 +7,7 @@ from typing import Iterator, List, Tuple
 
 from jinja2 import Environment, FileSystemLoader
 
-from .models import MethodSpec, ServiceModel
+from .common import MethodSpec, ServiceModel
 
 __all__ = [
     "ServiceRenderer",

@@ -11,7 +11,7 @@ from google.protobuf.descriptor_pb2 import DescriptorProto
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif.naming import full_service_name  # noqa: E402
+from protoc_gen_arduinoif.common import full_service_name  # noqa: E402
 from protoc_gen_arduinoif.request_context import RequestContext  # noqa: E402
 
 

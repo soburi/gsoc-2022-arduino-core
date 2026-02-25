@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from protoc_gen_arduinoif.options_runtime import get_arduino_opts_pb2
+from protoc_gen_arduinoif.common import get_arduino_opts_pb2
 
 
 def test_get_arduino_opts_pb2_requires_env(monkeypatch: pytest.MonkeyPatch) -> None:

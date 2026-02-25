@@ -9,7 +9,7 @@ from typing import Dict, List, Set, Tuple
 from google.protobuf.compiler import plugin_pb2
 from google.protobuf.descriptor_pb2 import DescriptorProto, ServiceDescriptorProto
 
-from .naming import full_service_name
+from .common import full_service_name
 
 __all__ = [
     "RequestContext",

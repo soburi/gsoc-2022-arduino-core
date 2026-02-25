@@ -10,7 +10,7 @@ from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 
-from protoc_gen_arduinoif.models import (  # noqa: E402
+from protoc_gen_arduinoif.common import (  # noqa: E402
     MethodSpec,
     PlannedMethod,
     ServiceModel,

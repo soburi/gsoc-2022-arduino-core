@@ -7,8 +7,8 @@ from typing import Iterator, Tuple
 
 from google.protobuf.compiler import plugin_pb2
 
+from .common import get_arduino_opts_pb2
 from .enum_renderer import EnumRenderer
-from .options_runtime import get_arduino_opts_pb2
 from .service_renderer import ServiceRenderer
 from .service_model_builder import ServiceModelBuilder
 from .request_context import RequestContext
