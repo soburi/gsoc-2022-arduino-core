@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
@@ -12,10 +13,17 @@ sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 from protoc_gen_arduinoif.common import (  # noqa: E402
     MethodSpec,
-    PlannedMethod,
     ServiceModel,
 )
 from protoc_gen_arduinoif.service_renderer import ServiceRenderer  # noqa: E402
+
+
+class _PlannedMethod(NamedTuple):
+    spec: MethodSpec
+    in_ifc: bool
+    in_api: bool
+    in_service: bool
+    in_service_impl: bool
 
 
 def _sample_model() -> ServiceModel:
@@ -54,9 +62,9 @@ def _sample_model() -> ServiceModel:
     )
 
     methods = [
-        PlannedMethod(foo_spec, True, True, True, True),
-        PlannedMethod(bar_spec, True, True, True, True),
-        PlannedMethod(baz_spec, True, True, True, True),
+        _PlannedMethod(foo_spec, True, True, True, True),
+        _PlannedMethod(bar_spec, True, True, True, True),
+        _PlannedMethod(baz_spec, True, True, True, True),
     ]
 
     return ServiceModel(

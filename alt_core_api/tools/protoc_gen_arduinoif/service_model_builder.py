@@ -9,8 +9,6 @@ from google.protobuf.descriptor_pb2 import EnumDescriptorProto
 
 from .common import (
     MethodSpec,
-    OptionsView,
-    PlannedMethod,
     ServiceModel,
     full_service_name,
     get_arduino_opts_pb2,
@@ -20,6 +18,42 @@ from .request_context import RequestContext
 __all__ = [
     "ServiceModelBuilder",
 ]
+
+
+class _OptionsView:
+    def __init__(self, options) -> None:
+        self._options = options
+
+    def has(self, extension) -> bool:
+        try:
+            return self._options.HasExtension(extension)
+        except (AttributeError, KeyError):
+            return False
+
+    def string(self, extension) -> str:
+        if not self.has(extension):
+            return ""
+        return str(self._options.Extensions[extension])
+
+    def string_list(self, extension) -> List[str]:
+        try:
+            values = self._options.Extensions[extension]
+        except (AttributeError, KeyError):
+            return []
+        return [text for text in (str(value).strip() for value in values) if text]
+
+    def bool(self, extension, default: bool = False) -> bool:
+        if not self.has(extension):
+            return default
+        return bool(self._options.Extensions[extension])
+
+
+class _PlannedMethod(NamedTuple):
+    spec: MethodSpec
+    in_ifc: bool
+    in_api: bool
+    in_service: bool
+    in_service_impl: bool
 
 
 class ServiceModelBuilder:
@@ -58,7 +92,7 @@ class ServiceModelBuilder:
         return cls(service, package_name, proto_enums, context)._build()
 
     def _build(self) -> ServiceModel:
-        service_opts = OptionsView(self._service.options)
+        service_opts = _OptionsView(self._service.options)
 
         ifc_header = (
             service_opts.string(self._opts_pb2.ifc_header_name).strip()
@@ -134,7 +168,7 @@ class ServiceModelBuilder:
         base_ifc_headers: List[str] = []
         for ancestor_full_name in lineage[:-1]:
             ancestor_service, _ = self._context.service_index[ancestor_full_name]
-            ancestor_opts = OptionsView(ancestor_service.options)
+            ancestor_opts = _OptionsView(ancestor_service.options)
             base_ifc_names.append(
                 ancestor_opts.string(self._opts_pb2.ifc_class_name).strip()
                 or f"{ancestor_service.name}Interface"
@@ -269,7 +303,7 @@ class ServiceModelBuilder:
 
         service, package_name = entry
         inherited: List[str] = []
-        for base_ref in OptionsView(service.options).string_list(
+        for base_ref in _OptionsView(service.options).string_list(
             self._opts_pb2.base_services
         ):
             base_full_name = self._resolve_service_reference(base_ref, package_name)
@@ -309,7 +343,7 @@ class ServiceModelBuilder:
         for service_full_name in lineage:
             service, _ = self._context.service_index[service_full_name]
             includes.extend(
-                OptionsView(service.options).string_list(self._opts_pb2.extra_includes)
+                _OptionsView(service.options).string_list(self._opts_pb2.extra_includes)
             )
         return includes
 
@@ -338,12 +372,12 @@ class ServiceModelBuilder:
         lineage_method_specs,
         own_virtual_decls,
         service_impl_callable,
-    ) -> List[PlannedMethod]:
-        methods: List[PlannedMethod] = []
+    ) -> List[_PlannedMethod]:
+        methods: List[_PlannedMethod] = []
         for spec in lineage_method_specs:
             in_service = spec.emit_service
             methods.append(
-                PlannedMethod(
+                _PlannedMethod(
                     spec=spec,
                     in_ifc=spec.decl in own_virtual_decls,
                     in_api=spec.emit_api and spec.source_virtual,

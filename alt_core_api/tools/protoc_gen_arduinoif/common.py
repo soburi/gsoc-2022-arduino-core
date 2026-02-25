@@ -7,7 +7,7 @@ import os
 import types
 from functools import lru_cache
 from pathlib import Path
-from typing import List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, List, NamedTuple, Tuple
 
 from google.protobuf.descriptor_pb2 import EnumDescriptorProto, ServiceDescriptorProto
 
@@ -17,46 +17,12 @@ __all__ = [
     "full_service_name",
     "get_arduino_opts_pb2",
     "ServiceDescriptor",
-    "OptionsView",
     "MethodSpec",
-    "PlannedMethod",
     "ServiceModel",
 ]
 
-
-class OptionsView:
-    def __init__(self, options) -> None:
-        self._options = options
-
-    def has(self, extension) -> bool:
-        try:
-            return self._options.HasExtension(extension)
-        except (AttributeError, KeyError):
-            return False
-
-    def string(self, extension) -> str:
-        if not self.has(extension):
-            return ""
-        return str(self._options.Extensions[extension])
-
-    def string_list(self, extension) -> List[str]:
-        try:
-            values = self._options.Extensions[extension]
-        except (AttributeError, KeyError):
-            return []
-        return [text for text in (str(value).strip() for value in values) if text]
-
-    def bool(self, extension, default: bool = False) -> bool:
-        if not self.has(extension):
-            return default
-        return bool(self._options.Extensions[extension])
-
-class PlannedMethod(NamedTuple):
-    spec: MethodSpec
-    in_ifc: bool
-    in_api: bool
-    in_service: bool
-    in_service_impl: bool
+if TYPE_CHECKING:
+    from .service_model_builder import _PlannedMethod
 
 
 class ServiceModel(NamedTuple):
@@ -76,7 +42,7 @@ class ServiceModel(NamedTuple):
     api_header: str
     service_header: str
     service_impl_header: str
-    methods: List[PlannedMethod]
+    methods: List["_PlannedMethod"]
     generate_api: bool
     generate_service: bool
     generate_service_impl: bool

@@ -40,8 +40,8 @@ Only `RequestContext` is global. Service models are built and emitted one-by-one
 Module visibility is intentionally constrained:
 
 1. `request_context.py` exposes `RequestContext`.
-2. `common.py` exposes shared utilities/types (`full_service_name`, `get_arduino_opts_pb2`, `ServiceModel`, `MethodSpec`, `PlannedMethod`).
-3. `service_model_builder.py` exposes `ServiceModelBuilder` as the model-construction entry point.
+2. `common.py` exposes shared utilities/types (`full_service_name`, `get_arduino_opts_pb2`, `ServiceModel`, `MethodSpec`).
+3. `service_model_builder.py` exposes `ServiceModelBuilder`; helper types used there are private.
 4. `service_renderer.py` exposes `ServiceRenderer` for header rendering.
 
 Typical generated header names (per service):
