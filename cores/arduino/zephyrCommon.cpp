@@ -441,11 +441,23 @@ void analogWrite(enum dacPins dacName, int value) {
 		dac_channel_initialized[dacName] = true;
 	}
 
-	const int max_dac_value = (1U << dac_ch_cfg[dacName].resolution) - 1;
+	const uint32_t max_dac_value = (1U << dac_ch_cfg[dacName].resolution) - 1U;
+	const uint32_t maxInput = (1U << _analog_write_resolution) - 1U;
 
-	ret = dac_write_value(dac_dev, dac_ch_cfg[dacName].channel_id,
-						  map(value, 0, 1 << _analog_write_resolution, 0, max_dac_value));
+	if (value < 0) {
+		value = 0;
+	} else if (static_cast<uint32_t>(value) > maxInput) {
+		value = static_cast<int>(maxInput);
+	}
 
+	ret = dac_write_value(
+		dac_dev,
+		dac_ch_cfg[dacName].channel_id,
+		static_cast<uint32_t>(map(static_cast<long>(value),
+								  0L,
+								  static_cast<long>(maxInput),
+								  0L,
+								  static_cast<long>(max_dac_value))));
 	if (ret != 0) {
 		return;
 	}
