@@ -430,6 +430,10 @@ void analogWrite(enum dacPins dacName, int value) {
 	}
 
 	if (!dac_channel_initialized[dacName]) {
+		if (!device_is_ready(dac_dev)) {
+			return;
+		}
+
 		ret = dac_channel_setup(dac_dev, &dac_ch_cfg[dacName]);
 		if (ret != 0) {
 			return;
