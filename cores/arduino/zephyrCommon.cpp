@@ -391,6 +391,7 @@ int analogWriteResolution() {
 #ifdef CONFIG_PWM
 
 void analogWrite(pin_size_t pinNumber, int value) {
+	const int maxInput = (1 << _analog_write_resolution) - 1;
 	size_t idx = pwm_pin_index(pinNumber);
 
 	if (idx >= ARRAY_SIZE(arduino_pwm)) {
@@ -401,34 +402,49 @@ void analogWrite(pin_size_t pinNumber, int value) {
 		return;
 	}
 
-	value = map(value, 0, 1 << _analog_write_resolution, 0, arduino_pwm[idx].period);
-
-	if (((uint32_t)value) > arduino_pwm[idx].period) {
-		value = arduino_pwm[idx].period;
-	} else if (value < 0) {
+	if (value < 0) {
 		value = 0;
+	} else if (value > maxInput) {
+		value = maxInput;
 	}
+
+	const uint32_t pulse = map(value, 0, maxInput, 0, arduino_pwm[idx].period);
 
 	/*
 	 * A duty ratio determines by the period value defined in dts
 	 * and the value arguments. So usually the period value sets as 255.
 	 */
-	(void)pwm_set_pulse_dt(&arduino_pwm[idx], value);
+	(void)pwm_set_pulse_dt(&arduino_pwm[idx], pulse);
 }
 
 #endif
 
 #ifdef CONFIG_DAC
+static bool dac_channel_initialized[NUM_OF_DACS];
+
 void analogWrite(enum dacPins dacName, int value) {
+	int ret;
+
 	if (dacName >= NUM_OF_DACS) {
 		return;
 	}
 
-	dac_channel_setup(dac_dev, &dac_ch_cfg[dacName]);
+	if (!dac_channel_initialized[dacName]) {
+		ret = dac_channel_setup(dac_dev, &dac_ch_cfg[dacName]);
+		if (ret != 0) {
+			return;
+		}
+		dac_channel_initialized[dacName] = true;
+	}
 
 	const int max_dac_value = (1U << dac_ch_cfg[dacName].resolution) - 1;
-	dac_write_value(dac_dev, dac_ch_cfg[dacName].channel_id,
-					map(value, 0, 1 << _analog_write_resolution, 0, max_dac_value));
+
+	ret = dac_write_value(dac_dev, dac_ch_cfg[dacName].channel_id,
+						  map(value, 0, 1 << _analog_write_resolution, 0, max_dac_value));
+
+	if (ret != 0) {
+		return;
+	}
 }
 #endif
 
