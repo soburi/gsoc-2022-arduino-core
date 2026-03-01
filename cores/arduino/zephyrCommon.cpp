@@ -405,11 +405,7 @@ void analogWrite(pin_size_t pinNumber, int value) {
 		return;
 	}
 
-	value = map(value, 0, 1 << _analog_write_resolution, 0, arduino_pwm[idx].period);
-
-	if (((uint32_t)value) > arduino_pwm[idx].period) {
-		value = arduino_pwm[idx].period;
-	} else if (value < 0) {
+	if (value < 0) {
 		value = 0;
 	} else if (value > maxInput) {
 		value = maxInput;
