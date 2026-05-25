@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) Arduino s.r.l. and/or its affiliated companies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	status = "okay";
+	board_cdc_acm_uart: board_cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+		status = "okay";
+	};
+};
+
+&w25q512jvfiq {
+	partitions {
+		user_sketch: partition@323000 {
+			reg = <0x00323000 (DT_SIZE_M(3) - 0x3000)>;
+		};
+	};
+};
+
+/ {
+	zephyr,user {
+		cdc-acm-serial = <&board_cdc_acm_uart>; /* 'Serial' object is managed by SerialUSB */
+	};
+};
