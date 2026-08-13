@@ -27,25 +27,30 @@ endif()
 set(ARDUINO_API_BLOB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zephyr/blobs/ArduinoCore-API/)
 set(ARDUINO_API_BLOB_DIR     ${ARDUINO_API_BLOB_ROOT_DIR}/ArduinoCore-API-${ARDUINO_API_BLOB_VERSION})
 set(ARDUINO_API_BLOB_ARCHIVE ${ARDUINO_API_BLOB_DIR}.tar.gz)
+set(ARDUINO_API_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cores/arduino)
 
 if(NOT EXISTS ${ARDUINO_API_BLOB_ARCHIVE})
   message(FATAL_ERROR "Arduino API ${ARDUINO_API_BLOB_VERSION} must be downloaded with 'west blobs fetch'.")
 endif()
 
-if(NOT IS_DIRECTORY ${ARDUINO_API_BLOB_DIR})
+if(NOT IS_DIRECTORY ${ARDUINO_API_ROOT_DIR}/api)
   file(ARCHIVE_EXTRACT
     INPUT ${ARDUINO_API_BLOB_ARCHIVE}
     DESTINATION ${ARDUINO_API_BLOB_ROOT_DIR}
     PATTERNS */api/* # only extract the 'api' directory from the archive
   )
-  file(REMOVE_RECURSE ${CMAKE_CURRENT_SOURCE_DIR}/cores/arduino/api)
-  file(COPY ${ARDUINO_API_BLOB_DIR}/api DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/cores/arduino)
+
+  if(NOT ${ARDUINO_API_BLOB_DIR} STREQUAL ${ARDUINO_API_ROOT_DIR})
+    file(REMOVE_RECURSE ${ARDUINO_API_ROOT_DIR}/api)
+    file(RENAME ${ARDUINO_API_BLOB_DIR}/api ${ARDUINO_API_ROOT_DIR}/api)
+  endif()
 endif()
 
 if (NOT CONFIG_LLEXT_EDK)
   add_subdirectory(cores)
   add_subdirectory(libraries)
   zephyr_include_directories(${variant_dir})
+  zephyr_include_directories(${ARDUINO_API_ROOT_DIR})
 
   # It's fine to use GLOB here because the API files will only change when
   # ARDUINO_API_BLOB_VERSION is modified above, triggering a re-run of CMake.
